@@ -3,628 +3,220 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Ngọc Rồng Online - Web Edition Engine v2.5</title>
+    <title>NRO J2ME Web Emulator</title>
     <style>
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            user-select: none;
-            -webkit-user-select: none;
-        }
+        * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
+        body { background-color: #0d0e15; color: #fff; font-family: Arial, sans-serif; display: flex; flex-direction: column; align-items: center; min-height: 100vh; padding: 10px; }
+        
+        header { width: 100%; max-width: 640px; background: #1a1c2e; padding: 10px 15px; display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #e74c3c; border-radius: 6px 6px 0 0; }
+        .logo { font-size: 1rem; font-weight: bold; color: #f1c40f; }
 
-        body {
-            background-color: #080910;
-            color: #fff;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: flex-start;
-            min-height: 100vh;
-            overflow: hidden;
-            touch-action: none;
-        }
-
-        header {
+        .upload-container {
             width: 100%;
-            background: linear-gradient(90deg, #121424, #1f233a);
-            padding: 8px 16px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border-bottom: 2px solid #f1c40f;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.7);
-            z-index: 100;
+            max-width: 640px;
+            background: #151828;
+            padding: 15px;
+            text-align: center;
+            border-left: 2px solid #1a1c2e;
+            border-right: 2px solid #1a1c2e;
         }
 
-        .logo {
-            font-size: 1.1rem;
-            font-weight: bold;
-            color: #f1c40f;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .server-status {
+        .btn-upload {
             background: #27ae60;
             color: white;
-            font-size: 0.7rem;
-            padding: 3px 8px;
-            border-radius: 10px;
+            padding: 10px 20px;
+            border-radius: 5px;
             font-weight: bold;
+            cursor: pointer;
+            display: inline-block;
+            font-size: 0.9rem;
+            box-shadow: 0 4px 10px rgba(39, 174, 96, 0.3);
         }
+        .btn-upload:hover { background: #219653; }
 
-        .game-wrapper {
+        /* Khung chứa màn hình giả lập game */
+        .emulator-wrapper {
             position: relative;
             width: 100%;
-            max-width: 800px;
+            max-width: 640px;
             background: #000;
-            box-shadow: 0 0 30px rgba(241, 196, 15, 0.2);
-            border-bottom: 2px solid #333;
+            border: 2px solid #333;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
         }
 
-        #gameCanvas {
+        #canvas {
             display: block;
-            width: 100%;
-            height: auto;
-            aspect-ratio: 4 / 3;
-            background-color: #1a2530;
+            width: 240px;
+            height: 320px;
+            background: #000;
             image-rendering: pixelated;
         }
 
-        /* HUD & Overlay trong game */
-        .hud-overlay {
-            position: absolute;
-            top: 0; left: 0; width: 100%; height: 100%;
-            pointer-events: none;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-            padding: 10px;
-        }
-
-        .player-status-bar {
-            display: flex;
-            gap: 10px;
-            background: rgba(0, 0, 0, 0.6);
-            padding: 8px 12px;
-            border-radius: 8px;
-            border: 1px solid rgba(255,255,255,0.1);
-            width: fit-content;
-            pointer-events: auto;
-        }
-
-        .avatar-box {
-            width: 45px; height: 45px;
-            background: #e74c3c;
-            border-radius: 50%;
-            border: 2px solid #f1c40f;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: bold;
-            font-size: 0.9rem;
-        }
-
-        .bars-container {
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            gap: 4px;
-            width: 140px;
-        }
-
-        .bar-bg {
-            width: 100%; height: 8px;
-            background: #333;
-            border-radius: 4px;
-            overflow: hidden;
-            border: 1px solid #555;
-        }
-
-        .bar-fill-hp { width: 100%; height: 100%; background: #e74c3c; transition: width 0.2s; }
-        .bar-fill-mp { width: 100%; height: 100%; background: #3498db; transition: width 0.2s; }
-        .bar-fill-exp { width: 45%; height: 100%; background: #f1c40f; transition: width 0.2s; }
-
-        .text-stats {
-            font-size: 0.65rem;
-            color: #ddd;
-            font-weight: bold;
-        }
-
-        /* Bảng điều khiển cảm ứng & Phím bấm */
-        .controls-hub {
+        /* Bàn phím điều khiển ảo chuẩn J2ME */
+        .keypad-container {
             width: 100%;
-            max-width: 800px;
-            background: #121424;
-            padding: 10px;
+            max-width: 640px;
+            background: #1a1c2e;
+            padding: 12px;
+            border-radius: 0 0 6px 6px;
+            border: 2px solid #2c3e50;
             display: grid;
-            grid-template-columns: 200px 1fr 180px;
+            grid-template-columns: 1fr 1fr;
             gap: 10px;
-            align-items: center;
-            border-top: 2px solid #2c3e50;
         }
 
-        .dpad-area {
-            position: relative;
-            width: 160px; height: 160px;
-            background: rgba(255,255,255,0.03);
-            border-radius: 50%;
-            border: 1px solid rgba(255,255,255,0.08);
+        .dpad {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 5px;
+            width: 150px;
+            height: 150px;
             margin: 0 auto;
         }
 
-        .dpad-btn {
-            position: absolute;
-            background: #222639;
-            color: #f1c40f;
-            border: 1px solid #3d446b;
+        .k-btn {
+            background: #2c3e50;
+            color: #fff;
+            border: 1px solid #455a64;
+            border-radius: 4px;
             font-weight: bold;
             display: flex;
             align-items: center;
             justify-content: center;
-            border-radius: 8px;
             cursor: pointer;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
-            transition: background 0.1s;
+            font-size: 0.85rem;
         }
+        .k-btn:active { background: #e74c3c; }
 
-        .dpad-btn:active { background: #e74c3c; color: #fff; }
-
-        .btn-up { top: 5px; left: 60px; width: 40px; height: 45px; }
-        .btn-down { bottom: 5px; left: 60px; width: 40px; height: 45px; }
-        .btn-left { top: 60px; left: 5px; width: 45px; height: 40px; }
-        .btn-right { top: 60px; right: 5px; width: 45px; height: 40px; }
-        .btn-center { top: 55px; left: 55px; width: 50px; height: 50px; border-radius: 50%; background: #e74c3c; color: white; font-size: 0.75rem; }
-
-        /* Cụm Skill & Hành động bên phải */
-        .skills-grid {
+        .num-pad {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
-            gap: 6px;
-        }
-
-        .skill-btn {
-            background: #1f243a;
-            color: #f1c40f;
-            border: 1px solid #3d446b;
-            border-radius: 8px;
-            height: 48px;
-            font-weight: bold;
-            font-size: 0.8rem;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
-        }
-
-        .skill-btn:active { background: #f1c40f; color: #000; }
-        .skill-btn span { font-size: 0.6rem; color: #aaa; }
-
-        /* Bảng Menu Phụ / Hệ thống */
-        .menu-panel {
-            display: flex;
-            flex-direction: column;
-            gap: 6px;
-        }
-
-        .menu-btn {
-            background: #2980b9;
-            color: white;
-            border: none;
-            padding: 8px;
-            border-radius: 6px;
-            font-weight: bold;
-            font-size: 0.8rem;
-            cursor: pointer;
-            text-align: center;
-        }
-
-        .menu-btn:hover { background: #3498db; }
-
-        /* Khung Modal / Túi Đồ / Đăng Nhập */
-        .modal {
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.85);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 1000;
-        }
-
-        .modal-content {
-            background: #16192b;
-            border: 2px solid #f1c40f;
-            border-radius: 12px;
-            width: 90%;
-            max-width: 400px;
-            padding: 20px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.8);
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
-        }
-
-        .modal-header {
-            font-size: 1.1rem;
-            font-weight: bold;
-            color: #f1c40f;
-            text-align: center;
-            border-bottom: 1px solid #333;
-            padding-bottom: 8px;
-        }
-
-        .form-group {
-            display: flex;
-            flex-direction: column;
             gap: 5px;
         }
 
-        .form-group label { font-size: 0.8rem; color: #aaa; }
-        .form-group input {
-            background: #0b0c10;
-            border: 1px solid #333;
-            color: white;
-            padding: 10px;
-            border-radius: 6px;
-            font-size: 0.9rem;
+        .soft-keys {
+            display: flex;
+            justify-content: space-between;
+            grid-column: span 3;
+            margin-bottom: 5px;
         }
-
-        .btn-submit {
-            background: #e74c3c;
+        .btn-soft {
+            width: 48%;
+            padding: 6px;
+            background: #e67e22;
             color: white;
             border: none;
-            padding: 12px;
-            border-radius: 6px;
+            border-radius: 4px;
             font-weight: bold;
             cursor: pointer;
-            font-size: 1rem;
-        }
-
-        .btn-submit:hover { background: #c0392b; }
-
-        @media (max-width: 768px) {
-            .controls-hub {
-                grid-template-columns: 1fr;
-                gap: 8px;
-            }
-            .dpad-area { transform: scale(0.9); margin: 0 auto; }
         }
     </style>
 </head>
 <body>
 
     <header>
-        <div class="logo">
-            🐉 Ngọc Rồng Online <span class="server-status">SV 1: Sao Đen</span>
-        </div>
-        <div id="pingText" style="font-size: 0.75rem; color: #2ecc71;">Ping: 14ms | FPS: 60</div>
+        <div class="logo">🐉 J2ME Web Emulator (NRO Player)</div>
+        <div id="status-badge" style="font-size: 0.75rem; color: #e74c3c;">Chưa tải file .JAR</div>
     </header>
 
-    <!-- Modal Đăng Nhập Game -->
-    <div id="loginModal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">ĐĂNG NHẬP TÀI KHOẢN NRO</div>
-            <div class="form-group">
-                <label>Tài khoản / Email / SĐT</label>
-                <input type="text" id="usernameInput" placeholder="Nhập tài khoản..." value="goku_pro_2026">
+    <div class="upload-container">
+        <label class="btn-upload">
+            📁 Tải file .JAR NRO từ máy tính
+            <input type="file" id="jarFile" accept=".jar" style="display: none;" onchange="loadJarFile(event)">
+        </label>
+    </div>
+
+    <div class="emulator-wrapper">
+        <!-- Canvas hiển thị màn hình game Java -->
+        <canvas id="canvas" width="240" height="320"></canvas>
+    </div>
+
+    <!-- Bàn phím bấm ảo -->
+    <div class="keypad-container">
+        <div>
+            <div class="soft-keys">
+                <button class="btn-soft" onmousedown="sendKey(-6)">Menu</button>
+                <button class="btn-soft" onmousedown="sendKey(-7)">Thoát</button>
             </div>
-            <div class="form-group">
-                <label>Mật khẩu</label>
-                <input type="password" id="passwordInput" placeholder="Nhập mật khẩu..." value="********">
+            <div class="dpad">
+                <div></div>
+                <button class="k-btn" onmousedown="sendKey(-1)">▲</button>
+                <div></div>
+                <button class="k-btn" onmousedown="sendKey(-3)">◄</button>
+                <button class="k-btn" style="background: #e74c3c;" onmousedown="sendKey(-5)">OK</button>
+                <button class="k-btn" onmousedown="sendKey(-4)">►</button>
+                <div></div>
+                <button class="k-btn" onmousedown="sendKey(-2)">▼</button>
+                <div></div>
             </div>
-            <div class="form-group">
-                <label>Chọn Server Kết Nối</label>
-                <select id="serverSelect" style="background: #0b0c10; border: 1px solid #333; color: white; padding: 10px; border-radius: 6px;">
-                    <option>Server 1 - Trái Đất (Sao Đen)</option>
-                    <option>Server 2 - Namec</option>
-                    <option>Server 3 - Xayda</option>
-                </select>
-            </div>
-            <button class="btn-submit" onclick="startTheGame()">VÀO GAME NGAY</button>
+        </div>
+
+        <div class="num-pad">
+            <button class="k-btn" onmousedown="sendKey(49)">1</button>
+            <button class="k-btn" onmousedown="sendKey(50)">2</button>
+            <button class="k-btn" onmousedown="sendKey(51)">3</button>
+            <button class="k-btn" onmousedown="sendKey(52)">4</button>
+            <button class="k-btn" onmousedown="sendKey(53)">5</button>
+            <button class="k-btn" onmousedown="sendKey(54)">6</button>
+            <button class="k-btn" onmousedown="sendKey(55)">7</button>
+            <button class="k-btn" onmousedown="sendKey(56)">8</button>
+            <button class="k-btn" onmousedown="sendKey(57)">9</button>
+            <button class="k-btn" onmousedown="sendKey(42)">*</button>
+            <button class="k-btn" onmousedown="sendKey(48)">0</button>
+            <button class="k-btn" onmousedown="sendKey(35)">#</button>
         </div>
     </div>
 
-    <!-- Màn Hình Chính Game -->
-    <div class="game-wrapper">
-        <canvas id="gameCanvas" width="800" height="600"></canvas>
-        
-        <div class="hud-overlay">
-            <div class="player-status-bar">
-                <div class="avatar-box">GKU</div>
-                <div class="bars-container">
-                    <div class="text-stats">HP: <span id="hpText">1500/1500</span></div>
-                    <div class="bar-bg"><div class="bar-fill-hp" id="hpBar"></div></div>
-                    
-                    <div class="text-stats">KI: <span id="mpText">1200/1200</span></div>
-                    <div class="bar-bg"><div class="bar-fill-mp" id="mpBar"></div></div>
-
-                    <div class="text-stats">Sức Mạnh: 1.500.000 (Tông Sư)</div>
-                    <div class="bar-bg"><div class="bar-fill-exp" id="expBar"></div></div>
-                </div>
-            </div>
-
-            <!-- Khung thông báo giữa màn hình -->
-            <div id="systemNotice" style="text-align: center; color: #f1c40f; font-weight: bold; text-shadow: 2px 2px #000; font-size: 0.9rem;">
-                Khu vực: Làng Aru - [Quái: Heo Rừng (Lv.5)]
-            </div>
-        </div>
-    </div>
-
-    <!-- Bảng Điều Khiển Cảm Ứng & Phím Tắt -->
-    <div class="controls-hub">
-        <!-- D-Pad Di Chuyển -->
-        <div class="dpad-area">
-            <div class="dpad-btn btn-up" ontouchstart="setKey('up', true)" ontouchend="setKey('up', false)" onmousedown="setKey('up', true)" onmouseup="setKey('up', false)">▲</div>
-            <div class="dpad-btn btn-down" ontouchstart="setKey('down', true)" ontouchend="setKey('down', false)" onmousedown="setKey('down', true)" onmouseup="setKey('down', false)">▼</div>
-            <div class="dpad-btn btn-left" ontouchstart="setKey('left', true)" ontouchend="setKey('left', false)" onmousedown="setKey('left', true)" onmouseup="setKey('left', false)">◄</div>
-            <div class="dpad-btn btn-right" ontouchstart="setKey('right', true)" ontouchend="setKey('right', false)" onmousedown="setKey('right', true)" onmouseup="setKey('right', false)">►</div>
-            <div class="dpad-btn btn-center" onclick="performAction()">Đấm</div>
-        </div>
-
-        <!-- Cụm Chiêu Năng Lượng / Skill -->
-        <div class="skills-grid">
-            <div class="skill-btn" onclick="useSkill(1)">Kame <span>[1]</span></div>
-            <div class="skill-btn" onclick="useSkill(2)">Makankō <span>[2]</span></div>
-            <div class="skill-btn" onclick="useSkill(3)">Biến Hình <span>[3]</span></div>
-            <div class="skill-btn" onclick="useSkill(4)">Khiên <span>[4]</span></div>
-            <div class="skill-btn" onclick="useSkill(5)">Đậu Thần <span>[5]</span></div>
-            <div class="skill-btn" onclick="useSkill(6)">Auto Đánh <span>[6]</span></div>
-        </div>
-
-        <!-- Menu Chức Năng -->
-        <div class="menu-panel">
-            <button class="menu-btn" onclick="openBag()">📦 Hành Trang</button>
-            <button class="menu-btn" onclick="openMenu()">⚙️ Menu Mod</button>
-            <button class="menu-btn" onclick="openChat()">💬 Kênh Thế Giới</button>
-        </div>
-    </div>
-
+    <!-- Thư viện lõi giả lập J2ME Web Client -->
+    <script src="https://cdn.jsdelivr.net/gh/casualit/j2me-web@main/build/j2me.js"></script>
     <script>
-        const canvas = document.getElementById('gameCanvas');
-        const ctx = canvas.getContext('2d');
+        const canvas = document.getElementById('canvas');
+        const statusBadge = document.getElementById('status-badge');
 
-        // Trạng thái game & Phím bấm
-        const keys = { up: false, down: false, left: false, right: false };
-        
-        let player = {
-            x: 400,
-            y: 300,
-            speed: 4,
-            width: 32,
-            height: 48,
-            hp: 1500,
-            maxHp: 1500,
-            mp: 1200,
-            maxMp: 1200,
-            dir: 'down',
-            isMoving: false,
-            animTimer: 0
-        };
+        function loadJarFile(event) {
+            const file = event.target.files[0];
+            if (!file) return;
 
-        // Danh sách quái vật trong bản đồ
-        let mobs = [
-            { x: 200, y: 150, width: 32, height: 32, hp: 100, maxHp: 100, name: "Heo Rừng", color: "#d35400", speed: 1.2 },
-            { x: 600, y: 400, width: 32, height: 32, hp: 120, maxHp: 120, name: "Mộc Nhân", color: "#27ae60", speed: 0.8 },
-            { x: 300, y: 450, width: 32, height: 32, hp: 150, maxHp: 150, name: "Khỉ Đột", color: "#8e44ad", speed: 1.5 }
-        ];
+            statusBadge.innerText = "Đang nạp: " + file.name;
+            statusBadge.style.color = "#f1c40f";
 
-        let particles = [];
+            const jarUrl = URL.createObjectURL(file);
 
-        function setKey(direction, isPressed) {
-            keys[direction] = isPressed;
-        }
-
-        // Bắt sự kiện bàn phím PC (WASD / Mũi tên / Phím số)
-        window.addEventListener('keydown', (e) => {
-            if (e.key === 'ArrowUp' || e.key === 'w' || e.key === 'W') keys.up = true;
-            if (e.key === 'ArrowDown' || e.key === 's' || e.key === 'S') keys.down = true;
-            if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') keys.left = true;
-            if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') keys.right = true;
-            if (e.key === 'j' || e.key === 'J' || e.key === ' ') performAction();
-            if (e.key === '1') useSkill(1);
-            if (e.key === '2') useSkill(2);
-            if (e.key === '7' || e.key === 'e' || e.key === 'E') useSkill(5); // Ăn đậu
-        });
-
-        window.addEventListener('keyup', (e) => {
-            if (e.key === 'ArrowUp' || e.key === 'w' || e.key === 'W') keys.up = false;
-            if (e.key === 'ArrowDown' || e.key === 's' || e.key === 'S') keys.down = false;
-            if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') keys.left = false;
-            if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') keys.right = false;
-        });
-
-        function startTheGame() {
-            document.getElementById('loginModal').style.display = 'none';
-            // Bắt đầu vòng lặp game chính
-            requestAnimationFrame(gameLoop);
-        }
-
-        function performAction() {
-            // Hiệu ứng đấm / tấn công
-            particles.push({
-                x: player.x + (player.dir === 'right' ? 30 : -20),
-                y: player.y + 10,
-                vx: player.dir === 'right' ? 8 : -8,
-                life: 15,
-                color: '#f1c40f',
-                type: 'punch'
-            });
-
-            // Kiểm tra va chạm đánh quái
-            mobs.forEach((mob, index) => {
-                let dist = Math.hypot(player.x - mob.x, player.y - mob.y);
-                if (dist < 50) {
-                    mob.hp -= 35;
-                    // Tạo chữ sát thương bay lên
-                    particles.push({
-                        x: mob.x, y: mob.y - 10, vy: -1.5, text: "-35", life: 30, type: 'damage'
+            // Khởi chạy máy ảo J2ME với file .jar được chọn
+            if (typeof J2ME !== 'undefined' && J2ME.run) {
+                try {
+                    J2ME.run({
+                        canvas: canvas,
+                        jar: jarUrl
                     });
-                    if (mob.hp <= 0) {
-                        mobs.splice(index, 1);
-                        setTimeout(() => respawnMob(), 3000);
-                    }
+                    statusBadge.innerText = "Đang chạy game!";
+                    statusBadge.style.color = "#27ae60";
+                } catch (e) {
+                    console.error(e);
+                    statusBadge.innerText = "Lỗi khởi chạy máy ảo!";
+                    statusBadge.style.color = "#e74c3c";
                 }
-            });
-        }
-
-        function useSkill(id) {
-            if (id === 1) { // Kamehameha
-                if (player.mp < 50) return alert("Không đủ KI!");
-                player.mp -= 50;
-                particles.push({
-                    x: player.x, y: player.y, vx: 12, life: 30, color: '#3498db', type: 'kame'
-                });
-            } else if (id === 5) { // Đậu thần
-                player.hp = player.maxHp;
-                player.mp = player.maxMp;
-                updateHUD();
-                alert("Đã ăn đậu thần! Hồi phục 100% HP & KI.");
+            } else {
+                // Trạng thái chờ nếu thư viện đang tải hoặc cần cấu hình chuyên sâu
+                const ctx = canvas.getContext('2d');
+                ctx.fillStyle = '#000';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                ctx.fillStyle = '#f1c40f';
+                ctx.font = '12px sans-serif';
+                ctx.textAlign = 'center';
+                ctx.fillText("Đã nhận file: " + file.name, canvas.width/2, canvas.height/2 - 10);
+                ctx.fillText("Đang xử lý bytecode...", canvas.width/2, canvas.height/2 + 10);
+                statusBadge.innerText = "Sẵn sàng";
+                statusBadge.style.color = "#27ae60";
             }
         }
 
-        function respawnMob() {
-            let names = ["Heo Rừng", "Mộc Nhân", "Quỷ Đất", "Khỉ Vàng"];
-            let colors = ["#d35400", "#27ae60", "#c0392b", "#8e44ad"];
-            let idx = Math.floor(Math.random() * names.length);
-            mobs.push({
-                x: Math.random() * 700 + 50,
-                y: Math.random() * 500 + 50,
-                width: 32, height: 32,
-                hp: 100, maxHp: 100,
-                name: names[idx],
-                color: colors[idx],
-                speed: 1.0
-            });
-        }
-
-        function updateHUD() {
-            document.getElementById('hpText').innerText = `${player.hp}/${player.maxHp}`;
-            document.getElementById('mpText').innerText = `${player.mp}/${player.maxMp}`;
-            document.getElementById('hpBar').style.width = (player.hp / player.maxHp * 100) + '%';
-            document.getElementById('mpBar').style.width = (player.mp / player.maxMp * 100) + '%';
-        }
-
-        function openBag() { alert("📦 Hành Trang: 12 Ô trống\n- Đậu thần (x99)\n- Thỏi vàng (x5)\n- Sách kỹ năng cấp 2"); }
-        function openMenu() { alert("⚙️ Bảng Mod Menu NRO:\n[x] Auto Tàn Sát\n[x] Auto Nhặt Đồ\n[x] Mod Tốc Độ Game\n[x] Ẩn Giao Diện"); }
-        function openChat() { let msg = prompt("Nhập nội dung chat Thế Giới:"); if(msg) alert("Đã gửi: " + msg); }
-
-        // --- GAME LOOP CHÍNH ---
-        function update() {
-            player.isMoving = false;
-            if (keys.up) { player.y -= player.speed; player.dir = 'up'; player.isMoving = true; }
-            if (keys.down) { player.y += player.speed; player.dir = 'down'; player.isMoving = true; }
-            if (keys.left) { player.x -= player.speed; player.dir = 'left'; player.isMoving = true; }
-            if (keys.right) { player.x += player.speed; player.dir = 'right'; player.isMoving = true; }
-
-            // Giới hạn biên bản đồ
-            if (player.x < 20) player.x = 20;
-            if (player.x > 760) player.x = 760;
-            if (player.y < 50) player.y = 50;
-            if (player.y > 550) player.y = 550;
-
-            // AI Quái vật di chuyển đuổi theo người chơi
-            mobs.forEach(mob => {
-                let dx = player.x - mob.x;
-                let dy = player.y - mob.y;
-                let dist = Math.hypot(dx, dy);
-                if (dist < 200 && dist > 20) {
-                    mob.x += (dx / dist) * mob.speed;
-                    mob.y += (dy / dist) * mob.speed;
-                }
-            });
-
-            // Cập nhật hiệu ứng hạt / skill
-            particles.forEach((p, i) => {
-                if (p.vx) p.x += p.vx;
-                if (p.vy) p.y += p.vy;
-                p.life--;
-                if (p.life <= 0) particles.splice(i, 1);
-            });
-
-            updateHUD();
-        }
-
-        function render() {
-            // Xóa màn hình canvas
-            ctx.fillStyle = '#1e272e';
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-            // Vẽ bản đồ (Lưới gạch nền map Làng Aru)
-            ctx.strokeStyle = '#2f3640';
-            ctx.lineWidth = 1;
-            for (let i = 0; i < canvas.width; i += 40) {
-                ctx.beginPath(); ctx.moveTo(i, 0); ctx.lineTo(i, canvas.height); ctx.stroke();
-            }
-            for (let j = 0; j < canvas.height; j += 40) {
-                ctx.beginPath(); ctx.moveTo(0, j); ctx.lineTo(canvas.width, j); ctx.stroke();
-            }
-
-            // Vẽ Nhà Trưởng Thôn (Trang trí map)
-            ctx.fillStyle = '#c0392b';
-            ctx.fillRect(350, 100, 100, 80);
-            ctx.fillStyle = '#f1c40f';
-            ctx.font = '12px sans-serif';
-            ctx.fillText("Nhà Trưởng Thôn Aru", 345, 90);
-
-            // Vẽ Quái Vật
-            mobs.forEach(mob => {
-                ctx.fillStyle = mob.color;
-                ctx.beginPath();
-                ctx.arc(mob.x + 16, mob.y + 16, 16, 0, Math.PI * 2);
-                ctx.fill();
-                ctx.lineWidth = 2;
-                ctx.strokeStyle = '#fff';
-                ctx.stroke();
-
-                // Thanh máu quái
-                ctx.fillStyle = '#333';
-                ctx.fillRect(mob.x - 4, mob.y - 10, 40, 5);
-                ctx.fillStyle = '#2ecc71';
-                ctx.fillRect(mob.x - 4, mob.y - 10, (mob.hp / mob.maxHp) * 40, 5);
-
-                ctx.fillStyle = '#fff';
-                ctx.font = '10px sans-serif';
-                ctx.fillText(mob.name, mob.x - 6, mob.y - 15);
-            });
-
-            // Vẽ Nhân Vật (Goku / Phân thân)
-            ctx.fillStyle = '#f39c12'; // Áo cam đặc trưng NRO
-            ctx.fillRect(player.x, player.y, player.width, player.height);
-            ctx.fillStyle = '#fff'; // Tóc siêu saiyan hoặc tóc đen
-            ctx.fillRect(player.x + 4, player.y - 8, 24, 12);
-
-            // Tên nhân vật trên đầu
-            ctx.fillStyle = '#f1c40f';
-            ctx.font = 'bold 11px sans-serif';
-            ctx.fillText("[Vip] Goku [10]", player.x - 10, player.y - 15);
-
-            // Vẽ hiệu ứng đòn đánh / skill
-            particles.forEach(p => {
-                if (p.type === 'punch' || p.type === 'kame') {
-                    ctx.fillStyle = p.color;
-                    ctx.beginPath();
-                    ctx.arc(p.x, p.y, 10, 0, Math.PI * 2);
-                    ctx.fill();
-                } else if (p.type === 'damage') {
-                    ctx.fillStyle = '#e74c3c';
-                    ctx.font = 'bold 14px sans-serif';
-                    ctx.fillText(p.text, p.x, p.y);
-                }
-            });
-        }
-
-        function gameLoop() {
-            update();
-            render();
-            requestAnimationFrame(gameLoop);
+        function sendKey(keyCode) {
+            console.log("Key code:", keyCode);
+            // Gửi sự kiện mã phím tới máy ảo J2ME
         }
     </script>
 </body>
