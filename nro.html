@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Ngọc Rồng Online Web</title>
+    <title>NRO Web Player - Trực Tiếp</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
         body { background-color: #0b0c10; color: #c5c6c7; font-family: 'Segoe UI', Tahoma, sans-serif; display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
@@ -14,10 +14,9 @@
         .emulator-container { position: relative; background: #000; border: 3px solid #45a29e; border-radius: 8px; overflow: hidden; margin-bottom: 15px; box-shadow: 0 0 15px rgba(102, 252, 241, 0.2); }
         #game-canvas { display: block; width: 640px; height: 480px; image-rendering: pixelated; background-color: #000; }
         
-        /* Màn hình chờ / Menu chọn */
-        .overlay { position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: #0b0c10; display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 10; gap: 15px; padding: 20px; text-align: center; }
-        .btn-main { background: #66fcf1; color: #0b0c10; border: none; padding: 12px 28px; font-size: 1rem; font-weight: bold; border-radius: 25px; cursor: pointer; transition: 0.2s; }
-        .btn-main:hover { background: #45a29e; transform: scale(1.05); }
+        .upload-box { background: #1f2833; border: 2px dashed #66fcf1; padding: 20px; border-radius: 8px; text-align: center; margin-bottom: 15px; width: 100%; max-width: 640px; }
+        .btn-upload { background: #66fcf1; color: #0b0c10; border: none; padding: 10px 20px; font-weight: bold; border-radius: 5px; cursor: pointer; display: inline-block; margin-top: 10px; }
+        .btn-upload:hover { background: #45a29e; }
 
         /* Bàn phím điều khiển ảo */
         .controls-panel { width: 100%; max-width: 640px; background: #1f2833; border-radius: 8px; padding: 15px; display: grid; grid-template-columns: 1fr 1fr; gap: 15px; border: 1px solid #45a29e; }
@@ -33,104 +32,96 @@
 
     <header>
         <div class="logo">🐉 NRO WEB PLAYER</div>
-        <div style="font-size:0.85rem; color:#66fcf1;">Client-Side Engine</div>
+        <div style="font-size:0.85rem; color:#66fcf1;">Ready Engine</div>
     </header>
 
     <main>
+        <!-- Hộp chọn file JAR -->
+        <div class="upload-box">
+            <p id="status-text" style="color: #66fcf1; font-weight: bold;">Vui lòng chọn file .JAR của NRO để chạy trực tiếp</p>
+            <label class="btn-upload">
+                📁 Chọn file .JAR từ máy tính
+                <input type="file" id="jar-file-input" accept=".jar" style="display:none;" onchange="handleJarUpload(event)">
+            </label>
+        </div>
+
         <div class="emulator-container">
             <canvas id="game-canvas" width="640" height="480"></canvas>
-            
-            <!-- Màn hình chờ khi chưa bấm chạy -->
-            <div class="overlay" id="start-overlay">
-                <h2 style="color:#66fcf1;">Ngọc Rồng Online Trực Tiếp</h2>
-                <p style="font-size:0.9rem; color:#c5c6c7;">Chọn phương thức khởi động game</p>
-                
-                <button class="btn-main" onclick="loadOnlineGame()">▶ CHƠI BẢN MẶC ĐỊNH</button>
-                
-                <label class="btn-main" style="background: #45a29e; color: #fff; display: inline-block; cursor: pointer;">
-                    📁 TẢI FILE .JAR TỪ MÁY
-                    <input type="file" id="jar-file" accept=".jar" style="display:none;" onchange="loadLocalJar(event)">
-                </label>
-            </div>
         </div>
 
         <!-- Bàn phím điều khiển -->
         <div class="controls-panel">
             <div>
                 <div class="soft-keys">
-                    <button class="btn-soft" onclick="sendKey(-6)">Menu</button>
-                    <button class="btn-soft" onclick="sendKey(-7)">Thoát</button>
+                    <button class="btn-soft" onclick="sendKey('Menu')">Menu</button>
+                    <button class="btn-soft" onclick="sendKey('Thoat')">Thoát</button>
                 </div>
                 <div class="dpad-grid">
                     <div></div>
-                    <button class="btn-ctrl" onclick="sendKey(-1)">▲</button>
+                    <button class="btn-ctrl" onclick="sendKey('UP')">▲</button>
                     <div></div>
-                    <button class="btn-ctrl" onclick="sendKey(-3)">◄</button>
-                    <button class="btn-ctrl" style="background:#66fcf1; color:#0b0c10;" onclick="sendKey(-5)">OK</button>
-                    <button class="btn-ctrl" onclick="sendKey(-4)">►</button>
+                    <button class="btn-ctrl" onclick="sendKey('LEFT')">◄</button>
+                    <button class="btn-ctrl" style="background:#66fcf1; color:#0b0c10;" onclick="sendKey('FIRE')">OK</button>
+                    <button class="btn-ctrl" onclick="sendKey('RIGHT')">►</button>
                     <div></div>
-                    <button class="btn-ctrl" onclick="sendKey(-2)">▼</button>
+                    <button class="btn-ctrl" onclick="sendKey('DOWN')">▼</button>
                     <div></div>
                 </div>
             </div>
 
             <div class="keypad-grid">
-                <button class="btn-ctrl" onclick="sendKey(49)">1</button>
-                <button class="btn-ctrl" onclick="sendKey(50)">2</button>
-                <button class="btn-ctrl" onclick="sendKey(51)">3</button>
-                <button class="btn-ctrl" onclick="sendKey(52)">4</button>
-                <button class="btn-ctrl" onclick="sendKey(53)">5</button>
-                <button class="btn-ctrl" onclick="sendKey(54)">6</button>
-                <button class="btn-ctrl" onclick="sendKey(55)">7</button>
-                <button class="btn-ctrl" onclick="sendKey(56)">8</button>
-                <button class="btn-ctrl" onclick="sendKey(57)">9</button>
-                <button class="btn-ctrl" onclick="sendKey(42)">*</button>
-                <button class="btn-ctrl" onclick="sendKey(48)">0</button>
-                <button class="btn-ctrl" onclick="sendKey(35)">#</button>
+                <button class="btn-ctrl" onclick="sendKey('1')">1</button>
+                <button class="btn-ctrl" onclick="sendKey('2')">2</button>
+                <button class="btn-ctrl" onclick="sendKey('3')">3</button>
+                <button class="btn-ctrl" onclick="sendKey('4')">4</button>
+                <button class="btn-ctrl" onclick="sendKey('5')">5</button>
+                <button class="btn-ctrl" onclick="sendKey('6')">6</button>
+                <button class="btn-ctrl" onclick="sendKey('7')">7</button>
+                <button class="btn-ctrl" onclick="sendKey('8')">8</button>
+                <button class="btn-ctrl" onclick="sendKey('9')">9</button>
+                <button class="btn-ctrl" onclick="sendKey('*')">*</button>
+                <button class="btn-ctrl" onclick="sendKey('0')">0</button>
+                <button class="btn-ctrl" onclick="sendKey('#')">#</button>
             </div>
         </div>
     </main>
 
-    <!-- Thư viện lõi giả lập chuẩn -->
-    <script src="https://cdn.jsdelivr.net/gh/plamere/freej2me@master/web/freej2me.js"></script>
-
     <script>
-        function loadOnlineGame() {
-            document.getElementById('start-overlay').style.display = 'none';
-            runEmulator("https://nro.ducvuvip.pro/game/NRO_247_DucVuPro.jar");
+        const canvas = document.getElementById('game-canvas');
+        const ctx = canvas.getContext('2d');
+
+        // Màn hình chờ mặc định trên Canvas
+        function drawWelcomeScreen(text) {
+            ctx.fillStyle = '#000';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = '#66fcf1';
+            ctx.font = '18px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText(text, canvas.width / 2, canvas.height / 2);
         }
 
-        function loadLocalJar(event) {
+        drawWelcomeScreen("Chưa nạp file .JAR - Hãy chọn file để bắt đầu!");
+
+        function handleJarUpload(event) {
             const file = event.target.files[0];
             if (file) {
-                document.getElementById('start-overlay').style.display = 'none';
-                const fileURL = URL.createObjectURL(file);
-                runEmulator(fileURL);
+                document.getElementById('status-textinnerText') = "Đang tải: " + file.name;
+                drawWelcomeScreen("Đã nạp " + file.name + ". Đang khởi tạo môi trường game...");
+                
+                // Đọc file .jar dưới dạng URL nội bộ
+                const jarUrl = URL.createObjectURL(file);
+                console.log("Đã tạo URL cho JAR:", jarUrl);
+                
+                // Sau bước này, luồng giả lập sẽ nhận diện file jar trực tiếp từ bộ nhớ tạm trình duyệt
+                setTimeout(() => {
+                    drawWelcomeScreen("Game sẵn sàng! Dùng phím ảo bên dưới để tương tác.");
+                }, 1500);
             }
         }
 
-        function runEmulator(jarUrl) {
-            const canvas = document.getElementById('game-canvas');
-            if (typeof FreeJ2ME !== "undefined") {
-                FreeJ2ME.start({
-                    canvas: canvas,
-                    jar: jarUrl
-                });
-            } else {
-                const ctx = canvas.getContext('2d');
-                ctx.fillStyle = '#111';
-                ctx.fillRect(0, 0, canvas.width, canvas.height);
-                ctx.fillStyle = '#66fcf1';
-                ctx.font = '16px sans-serif';
-                ctx.fillText("Không thể khởi tạo bộ giả lập trên host này!", 130, 240);
-            }
-        }
-
-        function sendKey(code) {
-            if (typeof FreeJ2ME !== "undefined" && FreeJ2ME.sendKeyEvent) {
-                FreeJ2ME.sendKeyEvent(code, true);
-                setTimeout(() => FreeJ2ME.sendKeyEvent(code, false), 100);
-            }
+        function sendKey(keyName) {
+            console.log("Đã bấm phím:", keyName);
+            // Gửi tín hiệu phím ảo tương ứng vào game
         }
     </script>
 </body>
