@@ -3,757 +3,694 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NRO J2ME Web Emulator - Giả lập Ngọc Rồng Online</title>
-    <!-- Tailwind CSS CDN -->
+    <title>J2ME Web Emulator & Loader (J2ME Loader Web)</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script>
         tailwind.config = {
             darkMode: 'class',
             theme: {
                 extend: {
-                    colors: {
-                        retro: {
-                            dark: '#0f172a',
-                            card: '#1e293b',
-                            border: '#334155',
-                            accent: '#22c55e',
-                            accentHover: '#16a34a',
-                            lcd: '#022c22',
-                            lcdText: '#4ade80'
-                        }
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace'],
                     }
                 }
             }
         }
     </script>
-    <!-- FontAwesome for icons -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- JSZip for analyzing .jar file manifests -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=VT323&family=Inter:wght@300;400;500;600;700&display=swap');
-        
-        .font-retro {
-            font-family: 'VT323', monospace;
+        .pixelated {
+            image-rendering: pixelated;
+            image-rendering: crisp-edges;
         }
-        .lcd-screen {
-            background-color: #0d1b1e;
-            background-image: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
-            background-size: 100% 4px, 6px 100%;
-        }
-        .custom-scrollbar::-webkit-scrollbar {
+        /* Custom scrollbar for retro terminal and file explorer */
+        ::-webkit-scrollbar {
             width: 6px;
             height: 6px;
         }
-        .custom-scrollbar::-webkit-scrollbar-track {
-            background: #0f172a;
+        ::-webkit-scrollbar-track {
+            background: #090d16;
         }
-        .custom-scrollbar::-webkit-scrollbar-thumb {
-            background: #334155;
+        ::-webkit-scrollbar-thumb {
+            background: #1e293b;
             border-radius: 3px;
         }
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-            background: #475569;
-        }
-        .key-btn:active {
-            transform: scale(0.95);
+        ::-webkit-scrollbar-thumb:hover {
+            background: #334155;
         }
     </style>
 </head>
-<body class="bg-retro-dark text-slate-100 font-['Inter'] min-h-screen flex flex-col selection:bg-green-500 selection:text-black">
+<body class="bg-slate-950 text-slate-100 min-h-screen font-sans selection:bg-emerald-500 selection:text-slate-950">
 
-    <header class="bg-retro-card border-b border-retro-border px-4 py-3 flex items-center justify-between shadow-lg sticky top-0 z-50">
-        <div class="flex items-center space-x-3">
-            <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-green-500 to-emerald-700 flex items-center justify-center shadow-md shadow-green-900/40">
-                <i class="fa-solid fa-dragon text-white text-xl"></i>
+    <header class="border-b border-slate-800 bg-slate-900/80 backdrop-blur sticky top-0 z-50 px-4 py-3">
+        <div class="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-4">
+            <div class="flex items-center space-x-3">
+                <div class="bg-emerald-500/10 border border-emerald-500/30 p-2 rounded-xl text-emerald-400">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 10l-2 1m0 0l-2-1m2 1v2.5M20 7l-2 1m2-1l-2-1m2 1v2.5M14 4l-2-1-2 1M4 7l2-1M4 7l2 1M4 7v2.5M12 21l-2-1m2 1l2-1m-2 1v-2.5M6 18l-2-1v-2.5M18 18l2-1v-2.5" />
+                    </svg>
+                </div>
+                <div>
+                    <h1 class="font-bold text-lg tracking-wide text-white flex items-center gap-2">
+                        J2ME Web Loader 
+                        <span class="text-xs bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded-full border border-emerald-500/30 font-mono">v1.2.0</span>
+                    </h1>
+                    <p class="text-xs text-slate-400">Giả lập máy ảo Java MIDlet & Trình kiểm tra tài nguyên NRO trên trình duyệt</p>
+                </div>
             </div>
-            <div>
-                <h1 class="font-bold text-lg tracking-wide flex items-center gap-2">
-                    NRO J2ME Web Emulator 
-                    <span class="text-xs bg-green-500/20 text-green-400 px-2 py-0.5 rounded-full border border-green-500/30">v2.4 Pro</span>
-                </h1>
-                <p class="text-xs text-slate-400">Giả lập máy ảo Java trực tuyến chuyên nghiệp cho Ngọc Rồng Online</p>
+            
+            <div class="flex items-center space-x-3">
+                <div id="statusBadge" class="flex items-center space-x-2 px-3 py-1.5 rounded-lg bg-slate-800 border border-slate-700 text-xs font-mono text-slate-300">
+                    <span class="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span>
+                    <span id="statusText">Chưa nạp file JAR</span>
+                </div>
+                <button onclick="document.getElementById('jarFileInput').click()" class="bg-emerald-600 hover:bg-emerald-500 text-white font-medium px-4 py-2 rounded-xl text-sm transition shadow-lg shadow-emerald-900/30 flex items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                    </svg>
+                    Tải file JAR / ZIP
+                </button>
+                <input type="file" id="jarFileInput" accept=".jar,.zip" class="hidden" onchange="handleFileSelect(event)">
             </div>
-        </div>
-        
-        <div class="flex items-center space-x-3">
-            <div class="hidden md:flex items-center space-x-2 text-xs bg-slate-800 px-3 py-1.5 rounded-lg border border-slate-700">
-                <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                <span id="jvm-status-text" class="text-slate-300">JVM Sẵn sàng</span>
-            </div>
-            <button onclick="switchTab('emulator')" id="nav-emulator" class="px-3 py-1.5 rounded-lg bg-green-600 text-white text-sm font-medium transition hover:bg-green-500 flex items-center gap-1.5">
-                <i class="fa-solid fa-gamepad"></i> Trình giả lập
-            </button>
-            <button onclick="switchTab('guide')" id="nav-guide" class="px-3 py-1.5 rounded-lg bg-slate-800 text-slate-300 text-sm font-medium transition hover:bg-slate-700 flex items-center gap-1.5">
-                <i class="fa-solid fa-book-open"></i> Hướng dẫn tải NRO
-            </button>
         </div>
     </header>
 
-    <main class="flex-1 max-w-7xl w-full mx-auto p-4 md:p-6 grid grid-cols-1 lg:grid-cols-12 gap-6">
-
-        <!-- TAB 1: EMULATOR INTERFACE -->
-        <div id="tab-emulator" class="contents">
+    <main class="max-w-7xl mx-auto p-4 md:p-6 grid grid-cols-1 lg:grid-cols-12 gap-6">
+        
+        <!-- LEFT COLUMN: JAR Inspector, File Tree & Logs (5 cols) -->
+        <div class="lg:col-span-5 space-y-6 flex flex-col">
             
-            <!-- LEFT PANEL: Controls, Upload & Key Mapping -->
-            <section class="lg:col-span-5 flex flex-col space-y-6">
+            <!-- Upload & Manifest Card -->
+            <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl">
+                <h2 class="text-sm font-semibold text-slate-300 uppercase tracking-wider mb-4 flex items-center justify-between">
+                    <span>Thông tin MIDlet & Manifest</span>
+                    <span id="jarFileName" class="text-xs text-emerald-400 font-mono font-normal truncate max-w-[150px]"></span>
+                </h2>
                 
-                <!-- File Upload Card -->
-                <div class="bg-retro-card border border-retro-border rounded-2xl p-5 shadow-xl relative overflow-hidden">
-                    <div class="absolute top-0 right-0 w-32 h-32 bg-green-500/5 rounded-full blur-3xl pointer-events-none"></div>
-                    
-                    <h2 class="text-sm font-semibold uppercase tracking-wider text-green-400 mb-3 flex items-center gap-2">
-                        <i class="fa-solid fa-file-arrow-up"></i> Nạp File Game .jar (NRO)
-                    </h2>
-                    
-                    <div id="drop-zone" class="border-2 border-dashed border-slate-700 hover:border-green-500/60 rounded-xl p-6 text-center cursor-pointer transition bg-slate-900/50 hover:bg-slate-900 flex flex-col items-center justify-center relative">
-                        <input type="file" id="jar-file-input" accept=".jar" class="absolute inset-0 opacity-0 cursor-pointer w-full h-full" onchange="handleFileSelect(event)">
-                        <div class="w-12 h-12 rounded-full bg-slate-800 flex items-center justify-center text-green-400 mb-3 shadow-inner">
-                            <i class="fa-solid fa-cloud-arrow-up text-xl"></i>
-                        </div>
-                        <p class="text-sm font-medium text-slate-200">Kéo thả file .jar vào đây hoặc <span class="text-green-400 underline">chọn file</span></p>
-                        <p class="text-xs text-slate-500 mt-1">Hỗ trợ tất cả phiên bản Ngọc Rồng Online (.jar)</p>
-                    </div>
-
-                    <!-- File Info Box -->
-                    <div id="file-info-box" class="mt-4 hidden bg-slate-900/80 rounded-xl p-3.5 border border-slate-800 text-xs space-y-2">
-                        <div class="flex justify-between items-center">
-                            <span class="text-slate-400">Tên file:</span>
-                            <span id="info-filename" class="font-semibold text-green-300 truncate max-w-[180px]">Ngọc_Rồng_Online.jar</span>
-                        </div>
-                        <div class="flex justify-between items-center">
-                            <span class="text-slate-400">Dung lượng:</span>
-                            <span id="info-size" class="text-slate-200 font-mono">1.2 MB</span>
-                        </div>
-                        <div class="flex justify-between items-center">
-                            <span class="text-slate-400">MIDlet Main:</span>
-                            <span id="info-main" class="text-slate-200 font-mono truncate max-w-[180px]">Main.class</span>
-                        </div>
-                        <div class="flex justify-between items-center">
-                            <span class="text-slate-400">Trạng thái:</span>
-                            <span id="info-status" class="text-amber-400 font-semibold">Đã nạp (Chưa chạy)</span>
-                        </div>
+                <div id="dropZone" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event)" class="border-2 border-dashed border-slate-700 hover:border-emerald-500/50 rounded-xl p-6 text-center cursor-pointer transition bg-slate-950/50 group">
+                    <div class="text-slate-400 group-hover:text-emerald-400 transition flex flex-col items-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 mb-2 stroke-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                        </svg>
+                        <p class="text-sm font-medium">Kéo thả file .jar / .zip vào đây</p>
+                        <p class="text-xs text-slate-500 mt-1">Hoặc bấm nút tải lên phía trên (Ví dụ: DragonBoy.jar)</p>
                     </div>
                 </div>
 
-                <!-- Emulator Controls -->
-                <div class="bg-retro-card border border-retro-border rounded-2xl p-5 shadow-xl">
-                    <h2 class="text-sm font-semibold uppercase tracking-wider text-green-400 mb-3 flex items-center gap-2">
-                        <i class="fa-solid fa-sliders"></i> Điều khiển Máy ảo
-                    </h2>
-                    
-                    <div class="grid grid-cols-2 gap-3 mb-4">
-                        <button onclick="runEmulator()" id="btn-run" disabled class="bg-green-600 hover:bg-green-500 disabled:opacity-50 disabled:cursor-not-allowed text-white font-medium py-2.5 px-4 rounded-xl transition flex items-center justify-center gap-2 shadow-lg shadow-green-900/20">
-                            <i class="fa-solid fa-play"></i> Khởi động
-                        </button>
-                        <button onclick="pauseEmulator()" id="btn-pause" disabled class="bg-amber-600 hover:bg-amber-500 disabled:opacity-50 disabled:cursor-not-allowed text-white font-medium py-2.5 px-4 rounded-xl transition flex items-center justify-center gap-2">
-                            <i class="fa-solid fa-pause"></i> Tạm dừng
-                        </button>
-                        <button onclick="resetEmulator()" id="btn-reset" disabled class="bg-blue-600 hover:bg-blue-500 disabled:opacity-50 disabled:cursor-not-allowed text-white font-medium py-2.5 px-4 rounded-xl transition flex items-center justify-center gap-2">
-                            <i class="fa-solid fa-rotate-right"></i> Reset / Tải lại
-                        </button>
-                        <button onclick="stopEmulator()" id="btn-stop" disabled class="bg-rose-600 hover:bg-rose-500 disabled:opacity-50 disabled:cursor-not-allowed text-white font-medium py-2.5 px-4 rounded-xl transition flex items-center justify-center gap-2">
-                            <i class="fa-solid fa-power-off"></i> Đóng ứng dụng
-                        </button>
+                <div id="manifestInfo" class="mt-4 space-y-2 text-xs font-mono hidden">
+                    <div class="bg-slate-950 p-3 rounded-lg border border-slate-800 space-y-1.5">
+                        <div class="flex justify-between"><span class="text-slate-500">Tên Game:</span> <span id="mName" class="text-emerald-400 font-semibold">-</span></div>
+                        <div class="flex justify-between"><span class="text-slate-500">Phiên bản:</span> <span id="mVersion" class="text-slate-300">-</span></div>
+                        <div class="flex justify-between"><span class="text-slate-500">Nhà phát hành:</span> <span id="mVendor" class="text-slate-300">-</span></div>
+                        <div class="flex justify-between"><span class="text-slate-500">Main-Class:</span> <span id="mMainClass" class="text-amber-400 truncate max-w-[180px]">-</span></div>
                     </div>
-
-                    <!-- Resolution Selector -->
-                    <div class="space-y-2">
-                        <label class="text-xs text-slate-400 font-medium">Kích thước màn hình giả lập:</label>
-                        <div class="grid grid-cols-3 gap-2">
-                            <button onclick="setResolution('240x320')" id="res-240" class="py-1.5 px-2 bg-slate-800 hover:bg-slate-700 text-xs rounded-lg border border-slate-700 text-slate-200 font-medium transition active">Nokia (240x320)</button>
-                            <button onclick="setResolution('320x480')" id="res-320" class="py-1.5 px-2 bg-slate-800 hover:bg-slate-700 text-xs rounded-lg border border-slate-700 text-slate-200 font-medium transition">HVGA (320x480)</button>
-                            <button onclick="setResolution('fullscreen')" id="res-full" class="py-1.5 px-2 bg-slate-800 hover:bg-slate-700 text-xs rounded-lg border border-slate-700 text-slate-200 font-medium transition">Phóng to</button>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Terminal Log Window -->
-                <div class="bg-retro-card border border-retro-border rounded-2xl p-5 shadow-xl flex flex-col flex-1 min-h-[220px]">
-                    <div class="flex justify-between items-center mb-2">
-                        <h2 class="text-sm font-semibold uppercase tracking-wider text-green-400 flex items-center gap-2">
-                            <i class="fa-solid fa-terminal"></i> Terminal Bytecode Log
-                        </h2>
-                        <button onclick="clearLogs()" class="text-xs text-slate-400 hover:text-slate-200 underline">Xóa log</button>
-                    </div>
-                    <div id="terminal-logs" class="flex-1 bg-slate-950 font-retro text-sm text-green-400 p-3 rounded-xl border border-slate-800 h-44 overflow-y-auto custom-scrollbar space-y-1">
-                        <div>[JVM] Khởi tạo môi trường J2ME CLDC-1.1 / MIDP-2.0...</div>
-                        <div>[JVM] Đã sẵn sàng nạp file .jar từ người dùng.</div>
-                        <div>[INFO] Vui lòng tải lên file Ngọc Rồng Online (.jar) để bắt đầu giả lập.</div>
-                    </div>
-                </div>
-
-            </section>
-
-            <!-- RIGHT/CENTER PANEL: Emulator Screen & Virtual Keypad -->
-            <section class="lg:col-span-7 flex flex-col items-center justify-between space-y-6">
-                
-                <!-- Phone Frame Wrapper -->
-                <div id="phone-frame" class="bg-slate-900 border-4 border-slate-700 rounded-3xl p-4 shadow-2xl flex flex-col items-center relative transition-all duration-300 w-full max-w-md">
-                    <!-- Phone Speaker & Camera detail -->
-                    <div class="w-full flex items-center justify-between px-6 mb-2 text-slate-500 text-xs">
-                        <div class="flex items-center gap-1.5">
-                            <div class="w-2 h-2 rounded-full bg-red-500/80 animate-pulse"></div>
-                            <span class="font-retro tracking-widest text-slate-400">NRO-J2ME-VM</span>
-                        </div>
-                        <div class="w-12 h-1.5 bg-slate-800 rounded-full"></div>
-                        <div class="flex items-center gap-1 text-[10px] text-green-400">
-                            <i class="fa-solid fa-signal"></i>
-                            <i class="fa-solid fa-wifi"></i>
-                            <i class="fa-solid fa-battery-full"></i>
-                        </div>
-                    </div>
-
-                    <!-- Canvas Screen -->
-                    <div id="canvas-container" class="relative rounded-xl overflow-hidden border-2 border-slate-700 shadow-inner bg-black w-[240px] h-[320px] transition-all duration-300">
-                        <canvas id="emulator-canvas" width="240" height="320" class="w-full h-full block"></canvas>
-                        
-                        <!-- Overlay when stopped / waiting -->
-                        <div id="screen-overlay" class="absolute inset-0 bg-retro-dark/90 backdrop-blur-sm flex flex-col items-center justify-center p-4 text-center">
-                            <div class="w-16 h-16 rounded-2xl bg-green-500/10 border border-green-500/30 flex items-center justify-center text-green-400 mb-3 animate-bounce">
-                                <i class="fa-solid fa-mobile-screen-button text-3xl"></i>
-                            </div>
-                            <h3 class="font-bold text-slate-200 text-sm mb-1">Màn hình chờ J2ME</h3>
-                            <p class="text-xs text-slate-400 max-w-[200px]">Tải file NRO `.jar` và nhấn <span class="text-green-400 font-semibold">Khởi động</span> để chơi.</p>
-                        </div>
-                    </div>
-
-                    <!-- Phone Brand Logo -->
-                    <div class="my-3 text-center">
-                        <span class="font-retro text-sm tracking-widest text-slate-500">NOK-IA 6300 VIRTUAL</span>
-                    </div>
-
-                    <!-- Virtual Keypad (Nokia Style) -->
-                    <div class="w-full bg-slate-950/70 border border-slate-800 rounded-2xl p-3 grid grid-cols-3 gap-2">
-                        <!-- Soft Keys & D-Pad -->
-                        <button onclick="pressKey('soft-left')" class="key-btn bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold py-2 rounded-lg border border-slate-700 shadow">Trái</button>
-                        <button onclick="pressKey('up')" class="key-btn bg-slate-800 hover:bg-slate-700 text-green-400 text-sm font-bold py-2 rounded-lg border border-slate-700 shadow flex items-center justify-center"><i class="fa-solid fa-arrow-up"></i></button>
-                        <button onclick="pressKey('soft-right')" class="key-btn bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold py-2 rounded-lg border border-slate-700 shadow">Phải</button>
-
-                        <button onclick="pressKey('left')" class="key-btn bg-slate-800 hover:bg-slate-700 text-green-400 text-sm font-bold py-2 rounded-lg border border-slate-700 shadow flex items-center justify-center"><i class="fa-solid fa-arrow-left"></i></button>
-                        <button onclick="pressKey('fire')" class="key-btn bg-green-700 hover:bg-green-600 text-white text-xs font-bold py-2 rounded-lg border border-green-600 shadow flex items-center justify-center">CHỌN</button>
-                        <button onclick="pressKey('right')" class="key-btn bg-slate-800 hover:bg-slate-700 text-green-400 text-sm font-bold py-2 rounded-lg border border-slate-700 shadow flex items-center justify-center"><i class="fa-solid fa-arrow-right"></i></button>
-
-                        <!-- Number pad 1-9, *, 0, # -->
-                        <button onclick="pressKey('1')" class="key-btn bg-slate-800 hover:bg-slate-700 text-slate-200 font-retro text-xl py-2 rounded-lg border border-slate-700">1 <span class="text-[9px] text-slate-500 block">QWE</span></button>
-                        <button onclick="pressKey('2')" class="key-btn bg-slate-800 hover:bg-slate-700 text-slate-200 font-retro text-xl py-2 rounded-lg border border-slate-700">2 <span class="text-[9px] text-slate-500 block">ABC</span></button>
-                        <button onclick="pressKey('3')" class="key-btn bg-slate-800 hover:bg-slate-700 text-slate-200 font-retro text-xl py-2 rounded-lg border border-slate-700">3 <span class="text-[9px] text-slate-500 block">DEF</span></button>
-
-                        <button onclick="pressKey('4')" class="key-btn bg-slate-800 hover:bg-slate-700 text-slate-200 font-retro text-xl py-2 rounded-lg border border-slate-700">4 <span class="text-[9px] text-slate-500 block">GHI</span></button>
-                        <button onclick="pressKey('5')" class="key-btn bg-slate-800 hover:bg-slate-700 text-slate-200 font-retro text-xl py-2 rounded-lg border border-slate-700">5 <span class="text-[9px] text-slate-500 block">JKL</span></button>
-                        <button onclick="pressKey('6')" class="key-btn bg-slate-800 hover:bg-slate-700 text-slate-200 font-retro text-xl py-2 rounded-lg border border-slate-700">6 <span class="text-[9px] text-slate-500 block">MNO</span></button>
-
-                        <button onclick="pressKey('7')" class="key-btn bg-slate-800 hover:bg-slate-700 text-slate-200 font-retro text-xl py-2 rounded-lg border border-slate-700">7 <span class="text-[9px] text-slate-500 block">PQRS</span></button>
-                        <button onclick="pressKey('8')" class="key-btn bg-slate-800 hover:bg-slate-700 text-slate-200 font-retro text-xl py-2 rounded-lg border border-slate-700">8 <span class="text-[9px] text-slate-500 block">TUV</span></button>
-                        <button onclick="pressKey('9')" class="key-btn bg-slate-800 hover:bg-slate-700 text-slate-200 font-retro text-xl py-2 rounded-lg border border-slate-700">9 <span class="text-[9px] text-slate-500 block">WXYZ</span></button>
-
-                        <button onclick="pressKey('*')" class="key-btn bg-slate-800 hover:bg-slate-700 text-slate-200 font-retro text-xl py-2 rounded-lg border border-slate-700">*</button>
-                        <button onclick="pressKey('0')" class="key-btn bg-slate-800 hover:bg-slate-700 text-slate-200 font-retro text-xl py-2 rounded-lg border border-slate-700">0 <span class="text-[9px] text-slate-500 block">_</span></button>
-                        <button onclick="pressKey('#')" class="key-btn bg-slate-800 hover:bg-slate-700 text-slate-200 font-retro text-xl py-2 rounded-lg border border-slate-700">#</button>
-                    </div>
-
-                    <!-- Keyboard mapping hint -->
-                    <div class="mt-3 text-[11px] text-slate-400 text-center flex items-center justify-center gap-2">
-                        <i class="fa-solid fa-keyboard text-green-400"></i> Hỗ trợ phím cứng: Mũi tên (Di chuyển), Enter (Chọn), Số 1-9 (Menu/Skill)
-                    </div>
-                </div>
-
-            </section>
-        </div>
-
-        <!-- TAB 2: GUIDE & TIPS FOR NRO -->
-        <div id="tab-guide" class="hidden col-span-12">
-            <div class="bg-retro-card border border-retro-border rounded-2xl p-6 md:p-8 shadow-xl max-w-4xl mx-auto space-y-6">
-                <div class="border-b border-slate-800 pb-4">
-                    <h2 class="text-xl font-bold text-green-400 flex items-center gap-2.5">
-                        <i class="fa-solid fa-book-bookmark"></i> Hướng dẫn tải file `.jar` NRO chính chủ và Mẹo chơi mượt mà
-                    </h2>
-                    <p class="text-sm text-slate-400 mt-1">Cách thức lấy file cài đặt Java từ trang chủ Ngọc Rồng Online để chạy trên Web Emulator.</p>
-                </div>
-
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div class="bg-slate-900/60 p-5 rounded-xl border border-slate-800 space-y-3">
-                        <div class="w-8 h-8 rounded-lg bg-green-500/20 text-green-400 flex items-center justify-center font-bold">1</div>
-                        <h3 class="font-semibold text-slate-200">Tải file .jar từ trang chủ</h3>
-                        <p class="text-xs text-slate-400 leading-relaxed">
-                            Truy cập trang chủ chính thức của Ngọc Rồng Online (<span class="text-green-400 font-mono">ngocrongonline.com</span>). Chọn phiên bản dành cho điện thoại Java (phiên bản <span class="text-slate-200 font-semibold">.jar</span> nhỏ gọn như v230, v231...) và tải về máy tính của bạn.
-                        </p>
-                    </div>
-
-                    <div class="bg-slate-900/60 p-5 rounded-xl border border-slate-800 space-y-3">
-                        <div class="w-8 h-8 rounded-lg bg-green-500/20 text-green-400 flex items-center justify-center font-bold">2</div>
-                        <h3 class="font-semibold text-slate-200">Nạp vào Web Emulator</h3>
-                        <p class="text-xs text-slate-400 leading-relaxed">
-                            Kéo thả file `.jar` vừa tải vào khung tải lên ở bảng điều khiển bên trái. Hệ thống sẽ tự động phân tích cấu trúc MIDlet Manifest (`MIDlet-1`, Main Class, Icons) để khởi chạy máy ảo JVM.
-                        </p>
-                    </div>
-
-                    <div class="bg-slate-900/60 p-5 rounded-xl border border-slate-800 space-y-3">
-                        <div class="w-8 h-8 rounded-lg bg-green-500/20 text-green-400 flex items-center justify-center font-bold">3</div>
-                        <h3 class="font-semibold text-slate-200">Điều khiển và Phím tắt</h3>
-                        <p class="text-xs text-slate-400 leading-relaxed">
-                            Sử dụng các phím mũi tên trên bàn phím máy tính để di chuyển nhân vật, phím <span class="text-green-400 font-semibold">Enter</span> để chọn hoặc click trực tiếp vào bàn phím ảo Nokia trên màn hình giả lập.
-                        </p>
-                    </div>
-
-                    <div class="bg-slate-900/60 p-5 rounded-xl border border-slate-800 space-y-3">
-                        <div class="w-8 h-8 rounded-lg bg-green-500/20 text-green-400 flex items-center justify-center font-bold">4</div>
-                        <h3 class="font-semibold text-slate-200">Mẹo tối ưu hiệu suất</h3>
-                        <p class="text-xs text-slate-400 leading-relaxed">
-                            Chọn kích thước màn hình <span class="text-slate-200 font-semibold">Nokia 240x320</span> tiêu chuẩn để game chạy ở tốc độ khung hình mượt mà nhất. Đảm bảo trình duyệt không bị giới hạn tài nguyên tab nền.
-                        </p>
-                    </div>
-                </div>
-
-                <div class="text-center pt-4">
-                    <button onclick="switchTab('emulator')" class="bg-green-600 hover:bg-green-500 text-white font-medium px-6 py-2.5 rounded-xl transition shadow-lg shadow-green-900/20">
-                        <i class="fa-solid fa-arrow-left mr-2"></i> Quay lại Trình giả lập ngay
-                    </button>
                 </div>
             </div>
+
+            <!-- Asset Explorer & Inspector -->
+            <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl flex-1 flex flex-col">
+                <div class="flex items-center justify-between mb-4">
+                    <h2 class="text-sm font-semibold text-slate-300 uppercase tracking-wider">Trình khám phá tài nguyên</h2>
+                    <div class="flex space-x-1 bg-slate-950 p-1 rounded-lg border border-slate-800 text-xs">
+                        <button onclick="switchTab('assets')" id="tabBtnAssets" class="px-3 py-1 rounded-md bg-slate-800 text-emerald-400 font-medium transition">Ảnh/Assets (<span id="assetCount">0</span>)</button>
+                        <button onclick="switchTab('classes')" id="tabBtnClasses" class="px-3 py-1 rounded-md text-slate-400 hover:text-slate-200 transition">Classes (<span id="classCount">0</span>)</button>
+                    </div>
+                </div>
+
+                <!-- Assets Grid / Class List -->
+                <div class="bg-slate-950 rounded-xl border border-slate-800 p-3 h-56 overflow-y-auto">
+                    <div id="assetsView" class="grid grid-cols-3 gap-2">
+                        <div class="col-span-3 text-center py-12 text-slate-600 text-xs font-mono">Chưa có tài nguyên nào được tải</div>
+                    </div>
+                    <div id="classesView" class="hidden space-y-1 font-mono text-xs">
+                        <div class="text-slate-600 text-center py-12">Danh sách file .class sẽ hiện ở đây</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Terminal Console Log -->
+            <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl">
+                <div class="flex items-center justify-between mb-2">
+                    <h2 class="text-sm font-semibold text-slate-300 uppercase tracking-wider flex items-center gap-2">
+                        <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+                        Nhật ký hệ thống (Console)
+                    </h2>
+                    <button onclick="clearConsole()" class="text-xs text-slate-500 hover:text-slate-300">Xóa log</button>
+                </div>
+                <div id="terminalLog" class="bg-slate-950 rounded-xl border border-slate-800 p-3 h-36 overflow-y-auto font-mono text-[11px] text-slate-300 space-y-1">
+                    <div class="text-slate-500">[System] Sẵn sàng nạp file JAR J2ME...</div>
+                    <div class="text-slate-500">[System] Trình giả lập LCDUI Graphics đang chờ khởi động.</div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- RIGHT COLUMN: Nokia Phone Frame & Canvas & Keypad (7 cols) -->
+        <div class="lg:col-span-7 flex flex-col items-center justify-start space-y-6">
+            
+            <!-- Resolution Selector Bar -->
+            <div class="flex items-center justify-between w-full max-w-md bg-slate-900 border border-slate-800 px-4 py-2.5 rounded-2xl">
+                <span class="text-xs font-medium text-slate-400">Độ phân giải màn hình:</span>
+                <div class="flex space-x-2">
+                    <button onclick="setResolution(240, 320)" id="res240" class="px-2.5 py-1 rounded-lg text-xs font-mono bg-emerald-600 text-white transition">240x320</button>
+                    <button onclick="setResolution(320, 240)" id="res320" class="px-2.5 py-1 rounded-lg text-xs font-mono bg-slate-800 text-slate-300 hover:bg-slate-700 transition">320x240 (Landscape)</button>
+                    <button onclick="setResolution(360, 640)" id="res360" class="px-2.5 py-1 rounded-lg text-xs font-mono bg-slate-800 text-slate-300 hover:bg-slate-700 transition">360x640</button>
+                </div>
+            </div>
+
+            <!-- NOKIA RETRO PHONE CHASSIS -->
+            <div class="bg-gradient-to-b from-slate-800 to-slate-900 p-6 rounded-[40px] border-4 border-slate-700 shadow-2xl shadow-emerald-950/20 w-full max-w-md flex flex-col items-center relative">
+                
+                <!-- Phone Speaker & Brand Header -->
+                <div class="w-full flex items-center justify-between mb-3 px-2">
+                    <div class="w-12 h-1.5 bg-slate-950 rounded-full"></div>
+                    <span class="text-xs font-bold tracking-widest text-slate-400 uppercase font-mono">NOKIA J2ME</span>
+                    <div class="flex space-x-1">
+                        <div class="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></div>
+                        <div class="w-2 h-2 rounded-full bg-emerald-500"></div>
+                    </div>
+                </div>
+
+                <!-- LCD SCREEN CONTAINER -->
+                <div class="relative bg-black rounded-xl p-2 border-2 border-slate-700 shadow-inner w-full flex justify-center">
+                    <div id="canvasWrapper" class="relative bg-slate-950 overflow-hidden flex items-center justify-center" style="width: 240px; height: 320px;">
+                        <canvas id="lcdCanvas" width="240" height="320" class="pixelated cursor-crosshair"></canvas>
+                        
+                        <!-- Overlay initial message -->
+                        <div id="canvasOverlay" class="absolute inset-0 bg-slate-950/90 flex flex-col items-center justify-center p-4 text-center">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text-slate-600 mb-2 animate-bounce" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            <p class="text-xs text-slate-300 font-medium">Chưa có MIDlet nào chạy</p>
+                            <p class="text-[10px] text-slate-500 mt-1">Hãy tải file `.jar` để khởi động giả lập LCDUI</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Emulator Controls Toolbar (Play, Pause, Reset, Sound) -->
+                <div class="w-full flex items-center justify-between my-4 px-2">
+                    <div class="flex space-x-2">
+                        <button onclick="startEmulator()" class="bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-1 rounded-lg text-xs font-medium flex items-center gap-1 transition shadow">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/></svg>
+                            Chạy MIDlet
+                        </button>
+                        <button onclick="pauseEmulator()" class="bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-1 rounded-lg text-xs font-medium transition">Tạm dừng</button>
+                        <button onclick="resetEmulator()" class="bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-1 rounded-lg text-xs font-medium transition">Khởi động lại</button>
+                    </div>
+                    <div class="text-[11px] font-mono text-emerald-400" id="fpsDisplay">FPS: 60</div>
+                </div>
+
+                <!-- VIRTUAL KEYPAD -->
+                <div class="w-full bg-slate-950/80 rounded-2xl p-4 border border-slate-800 shadow-inner space-y-3">
+                    
+                    <!-- Soft keys & Call/End -->
+                    <div class="grid grid-cols-4 gap-2">
+                        <button onmousedown="handleKeyAction('SoftLeft', true)" onmouseup="handleKeyAction('SoftLeft', false)" ontouchstart="handleKeyAction('SoftLeft', true)" ontouchend="handleKeyAction('SoftLeft', false)" class="bg-slate-800 hover:bg-slate-700 active:bg-emerald-600 text-slate-200 text-xs py-1.5 rounded-lg font-semibold transition shadow">Menu Trái</button>
+                        <button onmousedown="handleKeyAction('Call', true)" onmouseup="handleKeyAction('Call', false)" ontouchstart="handleKeyAction('Call', true)" ontouchend="handleKeyAction('Call', false)" class="bg-emerald-800/80 hover:bg-emerald-700 text-white text-xs py-1.5 rounded-lg font-semibold transition shadow">📞 Gọi</button>
+                        <button onmousedown="handleKeyAction('End', true)" onmouseup="handleKeyAction('End', false)" ontouchstart="handleKeyAction('End', true)" ontouchend="handleKeyAction('End', false)" class="bg-rose-900/80 hover:bg-rose-800 text-white text-xs py-1.5 rounded-lg font-semibold transition shadow">📴 Tắt</button>
+                        <button onmousedown="handleKeyAction('SoftRight', true)" onmouseup="handleKeyAction('SoftRight', false)" ontouchstart="handleKeyAction('SoftRight', true)" ontouchend="handleKeyAction('SoftRight', false)" class="bg-slate-800 hover:bg-slate-700 active:bg-emerald-600 text-slate-200 text-xs py-1.5 rounded-lg font-semibold transition shadow">Menu Phải</button>
+                    </div>
+
+                    <!-- D-Pad and Center Fire Key -->
+                    <div class="flex justify-center items-center py-1">
+                        <div class="relative w-44 h-28 bg-slate-900 rounded-xl border border-slate-800 flex items-center justify-center shadow-inner">
+                            <!-- UP -->
+                            <button onmousedown="handleKeyAction('Up', true)" onmouseup="handleKeyAction('Up', false)" ontouchstart="handleKeyAction('Up', true)" ontouchend="handleKeyAction('Up', false)" class="absolute top-1.5 w-14 h-8 bg-slate-800 hover:bg-slate-700 active:bg-emerald-600 text-slate-200 rounded-t-lg font-bold text-xs flex items-center justify-center shadow">▲</button>
+                            <!-- DOWN -->
+                            <button onmousedown="handleKeyAction('Down', true)" onmouseup="handleKeyAction('Down', false)" ontouchstart="handleKeyAction('Down', true)" ontouchend="handleKeyAction('Down', false)" class="absolute bottom-1.5 w-14 h-8 bg-slate-800 hover:bg-slate-700 active:bg-emerald-600 text-slate-200 rounded-b-lg font-bold text-xs flex items-center justify-center shadow">▼</button>
+                            <!-- LEFT -->
+                            <button onmousedown="handleKeyAction('Left', true)" onmouseup="handleKeyAction('Left', false)" ontouchstart="handleKeyAction('Left', true)" ontouchend="handleKeyAction('Left', false)" class="absolute left-1.5 w-10 h-14 bg-slate-800 hover:bg-slate-700 active:bg-emerald-600 text-slate-200 rounded-l-lg font-bold text-xs flex items-center justify-center shadow">◄</button>
+                            <!-- RIGHT -->
+                            <button onmousedown="handleKeyAction('Right', true)" onmouseup="handleKeyAction('Right', false)" ontouchstart="handleKeyAction('Right', true)" ontouchend="handleKeyAction('Right', false)" class="absolute right-1.5 w-10 h-14 bg-slate-800 hover:bg-slate-700 active:bg-emerald-600 text-slate-200 rounded-r-lg font-bold text-xs flex items-center justify-center shadow">►</button>
+                            <!-- FIRE / OK -->
+                            <button onmousedown="handleKeyAction('Fire', true)" onmouseup="handleKeyAction('Fire', false)" ontouchstart="handleKeyAction('Fire', true)" ontouchend="handleKeyAction('Fire', false)" class="w-12 h-12 bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 text-white font-bold text-xs rounded-full shadow-lg flex items-center justify-center z-10 border-2 border-emerald-400/50">OK</button>
+                        </div>
+                    </div>
+
+                    <!-- Number Pad 1-9, *, 0, # -->
+                    <div class="grid grid-cols-3 gap-2">
+                        <button onmousedown="handleKeyAction('1', true)" onmouseup="handleKeyAction('1', false)" ontouchstart="handleKeyAction('1', true)" ontouchend="handleKeyAction('1', false)" class="bg-slate-900 hover:bg-slate-800 active:bg-emerald-600 text-slate-200 py-2 rounded-xl text-sm font-bold font-mono shadow">1</button>
+                        <button onmousedown="handleKeyAction('2', true)" onmouseup="handleKeyAction('2', false)" ontouchstart="handleKeyAction('2', true)" ontouchend="handleKeyAction('2', false)" class="bg-slate-900 hover:bg-slate-800 active:bg-emerald-600 text-slate-200 py-2 rounded-xl text-sm font-bold font-mono shadow">2 <span class="block text-[9px] font-normal text-slate-500">ABC</span></button>
+                        <button onmousedown="handleKeyAction('3', true)" onmouseup="handleKeyAction('3', false)" ontouchstart="handleKeyAction('3', true)" ontouchend="handleKeyAction('3', false)" class="bg-slate-900 hover:bg-slate-800 active:bg-emerald-600 text-slate-200 py-2 rounded-xl text-sm font-bold font-mono shadow">3 <span class="block text-[9px] font-normal text-slate-500">DEF</span></button>
+                        
+                        <button onmousedown="handleKeyAction('4', true)" onmouseup="handleKeyAction('4', false)" ontouchstart="handleKeyAction('4', true)" ontouchend="handleKeyAction('4', false)" class="bg-slate-900 hover:bg-slate-800 active:bg-emerald-600 text-slate-200 py-2 rounded-xl text-sm font-bold font-mono shadow">4 <span class="block text-[9px] font-normal text-slate-500">GHI</span></button>
+                        <button onmousedown="handleKeyAction('5', true)" onmouseup="handleKeyAction('5', false)" ontouchstart="handleKeyAction('5', true)" ontouchend="handleKeyAction('5', false)" class="bg-slate-900 hover:bg-slate-800 active:bg-emerald-600 text-slate-200 py-2 rounded-xl text-sm font-bold font-mono shadow">5 <span class="block text-[9px] font-normal text-slate-500">JKL</span></button>
+                        <button onmousedown="handleKeyAction('6', true)" onmouseup="handleKeyAction('6', false)" ontouchstart="handleKeyAction('6', true)" ontouchend="handleKeyAction('6', false)" class="bg-slate-900 hover:bg-slate-800 active:bg-emerald-600 text-slate-200 py-2 rounded-xl text-sm font-bold font-mono shadow">6 <span class="block text-[9px] font-normal text-slate-500">MNO</span></button>
+                        
+                        <button onmousedown="handleKeyAction('7', true)" onmouseup="handleKeyAction('7', false)" ontouchstart="handleKeyAction('7', true)" ontouchend="handleKeyAction('7', false)" class="bg-slate-900 hover:bg-slate-800 active:bg-emerald-600 text-slate-200 py-2 rounded-xl text-sm font-bold font-mono shadow">7 <span class="block text-[9px] font-normal text-slate-500">PQRS</span></button>
+                        <button onmousedown="handleKeyAction('8', true)" onmouseup="handleKeyAction('8', false)" ontouchstart="handleKeyAction('8', true)" ontouchend="handleKeyAction('8', false)" class="bg-slate-900 hover:bg-slate-800 active:bg-emerald-600 text-slate-200 py-2 rounded-xl text-sm font-bold font-mono shadow">8 <span class="block text-[9px] font-normal text-slate-500">TUV</span></button>
+                        <button onmousedown="handleKeyAction('9', true)" onmouseup="handleKeyAction('9', false)" ontouchstart="handleKeyAction('9', true)" ontouchend="handleKeyAction('9', false)" class="bg-slate-900 hover:bg-slate-800 active:bg-emerald-600 text-slate-200 py-2 rounded-xl text-sm font-bold font-mono shadow">9 <span class="block text-[9px] font-normal text-slate-500">WXYZ</span></button>
+                        
+                        <button onmousedown="handleKeyAction('*', true)" onmouseup="handleKeyAction('*', false)" ontouchstart="handleKeyAction('*', true)" ontouchend="handleKeyAction('*', false)" class="bg-slate-900 hover:bg-slate-800 active:bg-emerald-600 text-slate-200 py-2 rounded-xl text-sm font-bold font-mono shadow">*</button>
+                        <button onmousedown="handleKeyAction('0', true)" onmouseup="handleKeyAction('0', false)" ontouchstart="handleKeyAction('0', true)" ontouchend="handleKeyAction('0', false)" class="bg-slate-900 hover:bg-slate-800 active:bg-emerald-600 text-slate-200 py-2 rounded-xl text-sm font-bold font-mono shadow">0 <span class="block text-[9px] font-normal text-slate-500">_</span></button>
+                        <button onmousedown="handleKeyAction('#', true)" onmouseup="handleKeyAction('#', false)" ontouchstart="handleKeyAction('#', true)" ontouchend="handleKeyAction('#', false)" class="bg-slate-900 hover:bg-slate-800 active:bg-emerald-600 text-slate-200 py-2 rounded-xl text-sm font-bold font-mono shadow">#</button>
+                    </div>
+
+                </div>
+
+            </div>
+
         </div>
 
     </main>
 
-    <div id="toast-container" class="fixed bottom-5 right-5 z-50 flex flex-col space-y-2 pointer-events-none"></div>
-
     <script>
-        // Global Emulator State
-        let emulatorState = 'STOPPED'; // STOPPED, BOOTING, RUNNING, PAUSED
-        let currentFile = null;
-        let jarData = null;
-        let canvas = document.getElementById('emulator-canvas');
+        // Global State
+        let jarArchive = null;
+        let extractedAssets = {}; // filename -> ObjectURL
+        let extractedClasses = [];
+        let manifestData = {};
+        
+        let canvas = document.getElementById('lcdCanvas');
         let ctx = canvas.getContext('2d');
-        let animationFrameId = null;
-        let gameLoopTick = 0;
+        
+        let emulatorConfig = {
+            width: 240,
+            height: 320,
+            running: false,
+            fps: 60,
+            activeTab: 'assets'
+        };
 
-        // Initialize canvas standby graphics
-        function drawStandbyScreen(text = "JVM READY - CHỜ FILE JAR") {
-            ctx.fillStyle = '#022c22';
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-            
-            // Draw retro grid lines
-            ctx.strokeStyle = '#064e3b';
-            ctx.lineWidth = 1;
-            for (let i = 0; i < canvas.width; i += 20) {
-                ctx.beginPath();
-                ctx.moveTo(i, 0);
-                ctx.lineTo(i, canvas.height);
-                ctx.stroke();
-            }
-            for (let j = 0; j < canvas.height; j += 20) {
-                ctx.beginPath();
-                ctx.moveTo(0, j);
-                ctx.lineTo(canvas.width, j);
-                ctx.stroke();
-            }
+        // Game Demo / Emulation variables
+        let gameAnimFrame = null;
+        let playerState = {
+            x: 120,
+            y: 160,
+            vx: 0,
+            vy: 0,
+            speed: 2,
+            animFrame: 0
+        };
 
-            // Draw text
-            ctx.fillStyle = '#4ade80';
-            ctx.font = 'bold 14px VT323, monospace';
-            ctx.textAlign = 'center';
-            ctx.fillText("NRO J2ME EMULATOR v2.4", canvas.width / 2, canvas.height / 2 - 20);
-            
-            ctx.fillStyle = '#94a3b8';
-            ctx.font = '12px Inter, sans-serif';
-            ctx.fillText(text, canvas.width / 2, canvas.height / 2 + 10);
-        }
+        let keysState = {
+            Up: false,
+            Down: false,
+            Left: false,
+            Right: false,
+            Fire: false,
+            SoftLeft: false,
+            SoftRight: false
+        };
 
-        drawStandbyScreen();
-
-        // Switch Tabs
-        function switchTab(tabName) {
-            const emulatorTab = document.getElementById('tab-emulator');
-            const guideTab = document.getElementById('tab-guide');
-            const navEmulator = document.getElementById('nav-emulator');
-            const navGuide = document.getElementById('nav-guide');
-
-            if (tabName === 'emulator') {
-                emulatorTab.classList.remove('hidden');
-                emulatorTab.classList.add('contents');
-                guideTab.classList.add('hidden');
-                navEmulator.className = 'px-3 py-1.5 rounded-lg bg-green-600 text-white text-sm font-medium transition hover:bg-green-500 flex items-center gap-1.5';
-                navGuide.className = 'px-3 py-1.5 rounded-lg bg-slate-800 text-slate-300 text-sm font-medium transition hover:bg-slate-700 flex items-center gap-1.5';
-            } else {
-                emulatorTab.classList.remove('contents');
-                emulatorTab.classList.add('hidden');
-                guideTab.classList.remove('hidden');
-                navGuide.className = 'px-3 py-1.5 rounded-lg bg-green-600 text-white text-sm font-medium transition hover:bg-green-500 flex items-center gap-1.5';
-                navEmulator.className = 'px-3 py-1.5 rounded-lg bg-slate-800 text-slate-300 text-sm font-medium transition hover:bg-slate-700 flex items-center gap-1.5';
-            }
-        }
-
-        // Terminal logger helper
+        // Log Helper
         function logTerminal(message, type = 'info') {
-            const terminal = document.getElementById('terminal-logs');
-            const div = document.createElement('div');
-            let colorClass = 'text-green-400';
-            if (type === 'warn') colorClass = 'text-amber-400';
-            if (type === 'error') colorClass = 'text-rose-400';
-            if (type === 'success') colorClass = 'text-cyan-400';
-            
-            div.className = colorClass;
-            div.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
-            terminal.appendChild(div);
-            terminal.scrollTop = terminal.scrollHeight;
+            const term = document.getElementById('terminalLog');
+            const time = new Date().toLocaleTimeString();
+            let color = 'text-slate-300';
+            if (type === 'success') color = 'text-emerald-400';
+            if (type === 'error') color = 'text-rose-400';
+            if (type === 'warn') color = 'text-amber-400';
+
+            term.innerHTML += `<div class="${color}">[${time}] ${message}</div>`;
+            term.scrollTop = term.scrollHeight;
         }
 
-        // Toast notification helper (No alert/confirm)
-        function showToast(message, type = 'success') {
-            const container = document.getElementById('toast-container');
-            const toast = document.createElement('div');
-            toast.className = `pointer-events-auto px-4 py-3 rounded-xl shadow-2xl text-sm font-medium border flex items-center gap-3 transition-all transform translate-y-2 opacity-0 ${
-                type === 'success' ? 'bg-slate-900 border-green-500/50 text-green-300' : 
-                type === 'warn' ? 'bg-slate-900 border-amber-500/50 text-amber-300' : 'bg-slate-900 border-rose-500/50 text-rose-300'
-            }`;
-            toast.innerHTML = `<i class="fa-solid ${type === 'success' ? 'fa-circle-check text-green-400' : 'fa-triangle-exclamation text-amber-400'}"></i> <span>${message}</span>`;
-            container.appendChild(toast);
-            
-            setTimeout(() => {
-                toast.classList.remove('translate-y-2', 'opacity-0');
-            }, 10);
-
-            setTimeout(() => {
-                toast.classList.add('translate-y-2', 'opacity-0');
-                setTimeout(() => toast.remove(), 300);
-            }, 3500);
+        function clearConsole() {
+            document.getElementById('terminalLog').innerHTML = '';
+            logTerminal("Đã làm mới bảng nhật ký.", "info");
         }
 
-        // Handle file upload
-        async function handleFileSelect(event) {
-            const file = event.target.files[0];
-            if (!file) return;
+        // Tab Switching
+        function switchTab(tab) {
+            emulatorConfig.activeTab = tab;
+            const btnAssets = document.getElementById('tabBtnAssets');
+            const btnClasses = document.getElementById('tabBtnClasses');
+            const viewAssets = document.getElementById('assetsView');
+            const viewClasses = document.getElementById('classesView');
 
-            if (!file.name.endsWith('.jar')) {
-                showToast('Vui lòng chọn đúng file định dạng .jar của Ngọc Rồng Online!', 'error');
-                logTerminal(`Lỗi: File "${file.name}" không phải định dạng .jar hợp lệ.`, 'error');
-                return;
+            if (tab === 'assets') {
+                btnAssets.className = "px-3 py-1 rounded-md bg-slate-800 text-emerald-400 font-medium transition";
+                btnClasses.className = "px-3 py-1 rounded-md text-slate-400 hover:text-slate-200 transition";
+                viewAssets.classList.remove('hidden');
+                viewClasses.classList.add('hidden');
+            } else {
+                btnClasses.className = "px-3 py-1 rounded-md bg-slate-800 text-emerald-400 font-medium transition";
+                btnAssets.className = "px-3 py-1 rounded-md text-slate-400 hover:text-slate-200 transition";
+                viewClasses.classList.remove('hidden');
+                viewAssets.classList.add('hidden');
             }
-
-            currentFile = file;
-            logTerminal(`Đã nhận file: ${file.name} (${(file.size / 1024 / 1024).toFixed(2)} MB)`, 'success');
-            
-            // Update UI file info
-            document.getElementById('file-info-box').classList.remove('hidden');
-            document.getElementById('info-filename').textContent = file.name;
-            document.getElementById('info-size').textContent = `${(file.size / 1024 / 1024).toFixed(2)} MB`;
-            document.getElementById('info-status').textContent = 'Đang phân tích MANIFEST...';
-            document.getElementById('info-status').className = 'text-amber-400 font-semibold';
-
-            try {
-                // Parse Jar with JSZip
-                const zip = new JSZip();
-                const zipContent = await zip.loadAsync(file);
-                jarData = zipContent;
-
-                let mainClass = 'Main.class';
-                let midletName = 'Ngoc Rong Online';
-
-                if (zipContent.files['META-INF/MANIFEST.MF']) {
-                    const manifestText = await zipContent.files['META-INF/MANIFEST.MF'].async('text');
-                    logTerminal('Đọc thành công META-INF/MANIFEST.MF', 'success');
-                    
-                    const lines = manifestText.split('\n');
-                    lines.forEach(line => {
-                        if (line.includes('MIDlet-1:')) {
-                            midletName = line.split(':')[1].trim();
-                        }
-                        if (line.includes('MIDlet-Jar-URL:') || line.includes('Main-Class:')) {
-                            mainClass = line.split(':')[1].trim();
-                        }
-                    });
-                } else {
-                    logTerminal('Không tìm thấy MANIFEST.MF chính thống, sử dụng cấu hình mặc định NRO.', 'warn');
-                }
-
-                document.getElementById('info-main').textContent = midletName.split(',')[0] || 'DragonBoy.class';
-                document.getElementById('info-status').textContent = 'Sẵn sàng khởi chạy';
-                document.getElementById('info-status').className = 'text-green-400 font-semibold';
-
-                // Enable Run Button
-                document.getElementById('btn-run').disabled = false;
-                document.getElementById('jvm-status-text').textContent = 'File JAR đã sẵn sàng';
-                showToast(`Nạp file ${file.name} thành công! Nhấn Khởi động để chơi.`);
-                logTerminal('JVM Bytecode Verification hoàn tất. Sẵn sàng thực thi MIDlet.', 'success');
-
-            } catch (err) {
-                console.error(err);
-                logTerminal(`Lỗi giải nén file .jar: ${err.message}`, 'error');
-                showToast('Lỗi đọc file .jar! File có thể bị hỏng.', 'error');
-                document.getElementById('info-status').textContent = 'Lỗi phân tích';
-                document.getElementById('info-status').className = 'text-rose-400 font-semibold';
-            }
-        }
-
-        // Emulator Actions
-        function runEmulator() {
-            if (!currentFile) {
-                showToast('Chưa có file .jar nào được nạp!', 'warn');
-                return;
-            }
-
-            emulatorState = 'BOOTING';
-            logTerminal('Đang khởi động Máy ảo Java (JVM Booting)...', 'info');
-            document.getElementById('screen-overlay').classList.remove('hidden');
-            document.getElementById('screen-overlay').innerHTML = `
-                <div class="flex flex-col items-center justify-center space-y-3">
-                    <div class="w-10 h-10 border-4 border-green-500 border-t-transparent rounded-full animate-spin"></div>
-                    <p class="text-xs text-green-400 font-mono">Đang nạp bytecode MIDlet...</p>
-                </div>
-            `;
-
-            // Enable controls
-            document.getElementById('btn-pause').disabled = false;
-            document.getElementById('btn-reset').disabled = false;
-            document.getElementById('btn-stop').disabled = false;
-            document.getElementById('btn-run').disabled = true;
-
-            setTimeout(() => {
-                emulatorState = 'RUNNING';
-                document.getElementById('screen-overlay').classList.add('hidden');
-                document.getElementById('jvm-status-text').textContent = 'Đang chạy (NRO Active)';
-                logTerminal('MIDlet đã khởi chạy thành công. Render Canvas bắt đầu.', 'success');
-                startEmulationLoop();
-            }, 1800);
-        }
-
-        function pauseEmulator() {
-            if (emulatorState === 'RUNNING') {
-                emulatorState = 'PAUSED';
-                cancelAnimationFrame(animationFrameId);
-                document.getElementById('screen-overlay').classList.remove('hidden');
-                document.getElementById('screen-overlay').innerHTML = `
-                    <div class="flex flex-col items-center justify-center space-y-2">
-                        <i class="fa-solid fa-pause text-3xl text-amber-400 mb-1"></i>
-                        <h3 class="font-bold text-slate-200 text-sm">Máy ảo đang tạm dừng</h3>
-                        <p class="text-xs text-slate-400">Nhấn Khởi động để tiếp tục</p>
-                    </div>
-                `;
-                document.getElementById('btn-run').disabled = false;
-                logTerminal('Máy ảo đã tạm dừng (Paused).', 'warn');
-                showToast('Đã tạm dừng giả lập', 'warn');
-            }
-        }
-
-        function resetEmulator() {
-            logTerminal('Đang khởi động lại (Reset JVM)...', 'warn');
-            stopEmulator();
-            setTimeout(() => {
-                runEmulator();
-            }, 500);
-        }
-
-        function stopEmulator() {
-            emulatorState = 'STOPPED';
-            cancelAnimationFrame(animationFrameId);
-            drawStandbyScreen("ĐÃ ĐÓNG ỨNG DỤNG J2ME");
-            
-            document.getElementById('screen-overlay').classList.remove('hidden');
-            document.getElementById('screen-overlay').innerHTML = `
-                <div class="w-16 h-16 rounded-2xl bg-green-500/10 border border-green-500/30 flex items-center justify-center text-green-400 mb-3">
-                    <i class="fa-solid fa-mobile-screen-button text-3xl"></i>
-                </div>
-                <h3 class="font-bold text-slate-200 text-sm mb-1">Màn hình chờ J2ME</h3>
-                <p class="text-xs text-slate-400 max-w-[200px]">Ứng dụng đã đóng. Nhấn <span class="text-green-400 font-semibold">Khởi động</span> để chạy lại.</p>
-            `;
-
-            document.getElementById('btn-run').disabled = false;
-            document.getElementById('btn-pause').disabled = true;
-            document.getElementById('btn-reset').disabled = true;
-            document.getElementById('btn-stop').disabled = true;
-            document.getElementById('jvm-status-text').textContent = 'JVM Sẵn sàng';
-            logTerminal('Đã đóng ứng dụng MIDlet.', 'info');
-            showToast('Đã đóng ứng dụng giả lập');
-        }
-
-        // Emulation simulation rendering loop (Simulating NRO gameplay graphics on canvas)
-        function startEmulationLoop() {
-            function render() {
-                if (emulatorState !== 'RUNNING') return;
-                
-                gameLoopTick++;
-                
-                // Clear canvas with retro map background
-                ctx.fillStyle = '#051923';
-                ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-                // Draw simulated NRO map background (Làng Aru / Đồi Hoang Sương Mù)
-                ctx.fillStyle = '#0a2e36';
-                ctx.fillRect(0, canvas.height - 80, canvas.width, 80); // Ground
-                
-                // Draw ground grass line
-                ctx.strokeStyle = '#22c55e';
-                ctx.lineWidth = 2;
-                ctx.beginPath();
-                ctx.moveTo(0, canvas.height - 80);
-                ctx.lineTo(canvas.width, canvas.height - 80);
-                ctx.stroke();
-
-                // Draw clouds / sky elements
-                ctx.fillStyle = 'rgba(255, 255, 255, 0.05)';
-                ctx.beginPath();
-                ctx.arc((gameLoopTick * 0.5) % (canvas.width + 50) - 25, 40, 18, 0, Math.PI * 2);
-                ctx.arc((gameLoopTick * 0.3) % (canvas.width + 80) - 40, 70, 12, 0, Math.PI * 2);
-                ctx.fill();
-
-                // Draw HUD (HP, KI, Tên nhân vật)
-                ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
-                ctx.fillRect(5, 5, 120, 36);
-                ctx.strokeStyle = '#334155';
-                ctx.strokeRect(5, 5, 120, 36);
-
-                ctx.fillStyle = '#ffffff';
-                ctx.font = 'bold 10px Inter, sans-serif';
-                ctx.fillText('Goku SSJ (Lv.85)', 10, 18);
-
-                // HP Bar
-                ctx.fillStyle = '#ef4444';
-                ctx.fillRect(10, 23, 70, 5);
-                ctx.fillStyle = '#22c55e';
-                ctx.fillRect(10, 23, 55, 5); // Current HP
-
-                // KI Bar
-                ctx.fillStyle = '#3b82f6';
-                ctx.fillRect(10, 30, 70, 4);
-
-                // Draw Player Character (Simulated pixel art style sprite in center)
-                let playerX = canvas.width / 2 + Math.sin(gameLoopTick * 0.05) * 20;
-                let playerY = canvas.height - 95;
-
-                // Character Shadow
-                ctx.fillStyle = 'rgba(0, 0, 0, 0.4)';
-                ctx.beginPath();
-                ctx.ellipse(playerX, canvas.height - 78, 12, 5, 0, 0, Math.PI * 2);
-                ctx.fill();
-
-                // Character Body (Goku orange gi)
-                ctx.fillStyle = '#ea580c';
-                ctx.fillRect(playerX - 8, playerY - 18, 16, 20);
-                // Hair (Super Saiyan yellow spiky)
-                ctx.fillStyle = '#eab308';
-                ctx.beginPath();
-                ctx.moveTo(playerX - 10, playerY - 18);
-                ctx.lineTo(playerX, playerY - 32);
-                ctx.lineTo(playerX + 10, playerY - 18);
-                ctx.fill();
-
-                // Character Name Tag
-                ctx.fillStyle = '#fde047';
-                ctx.font = 'bold 9px VT323, monospace';
-                ctx.textAlign = 'center';
-                ctx.fillText('[VIP] SonGoku', playerX, playerY - 36);
-
-                // Draw mini monster / enemy
-                let enemyX = canvas.width - 60;
-                let enemyY = canvas.height - 90;
-                ctx.fillStyle = '#dc2626'; // Red dragon/mobi
-                ctx.fillRect(enemyX - 10, enemyY - 15, 20, 18);
-                ctx.fillStyle = '#ffffff';
-                ctx.font = '8px VT323, monospace';
-                ctx.fillText('Heo Rừng', enemyX, enemyY - 20);
-
-                animationFrameId = requestAnimationFrame(render);
-            }
-            render();
         }
 
         // Resolution Switcher
-        function setResolution(mode) {
-            const phoneFrame = document.getElementById('phone-frame');
-            const canvasContainer = document.getElementById('canvas-container');
-            const btn240 = document.getElementById('res-240');
-            const btn320 = document.getElementById('res-320');
-            const btnFull = document.getElementById('res-full');
+        function setResolution(w, h) {
+            emulatorConfig.width = w;
+            emulatorConfig.height = h;
+            canvas.width = w;
+            canvas.height = h;
+            const wrapper = document.getElementById('canvasWrapper');
+            wrapper.style.width = `${w}px`;
+            wrapper.style.height = `${h}px`;
 
-            // Reset active button classes
-            btn240.className = 'py-1.5 px-2 bg-slate-800 hover:bg-slate-700 text-xs rounded-lg border border-slate-700 text-slate-200 font-medium transition';
-            btn320.className = 'py-1.5 px-2 bg-slate-800 hover:bg-slate-700 text-xs rounded-lg border border-slate-700 text-slate-200 font-medium transition';
-            btnFull.className = 'py-1.5 px-2 bg-slate-800 hover:bg-slate-700 text-xs rounded-lg border border-slate-700 text-slate-200 font-medium transition';
+            document.getElementById('res240').className = (w === 240 && h === 320) ? "px-2.5 py-1 rounded-lg text-xs font-mono bg-emerald-600 text-white transition" : "px-2.5 py-1 rounded-lg text-xs font-mono bg-slate-800 text-slate-300 hover:bg-slate-700 transition";
+            document.getElementById('res320').className = (w === 320 && h === 240) ? "px-2.5 py-1 rounded-lg text-xs font-mono bg-emerald-600 text-white transition" : "px-2.5 py-1 rounded-lg text-xs font-mono bg-slate-800 text-slate-300 hover:bg-slate-700 transition";
+            document.getElementById('res360').className = (w === 360 && h === 640) ? "px-2.5 py-1 rounded-lg text-xs font-mono bg-emerald-600 text-white transition" : "px-2.5 py-1 rounded-lg text-xs font-mono bg-slate-800 text-slate-300 hover:bg-slate-700 transition";
 
-            if (mode === '240x320') {
-                canvas.width = 240;
-                canvas.height = 320;
-                canvasContainer.style.width = '240px';
-                canvasContainer.style.height = '320px';
-                phoneFrame.style.maxWidth = '420px';
-                btn240.className = 'py-1.5 px-2 bg-green-600 text-xs rounded-lg border border-green-500 text-white font-medium transition';
-                showToast('Đã đổi độ phân giải: Nokia 240x320');
-            } else if (mode === '320x480') {
-                canvas.width = 320;
-                canvas.height = 480;
-                canvasContainer.style.width = '280px';
-                canvasContainer.style.height = '420px';
-                phoneFrame.style.maxWidth = '480px';
-                btn320.className = 'py-1.5 px-2 bg-green-600 text-xs rounded-lg border border-green-500 text-white font-medium transition';
-                showToast('Đã đổi độ phân giải: HVGA 320x480');
-            } else if (mode === 'fullscreen') {
-                canvas.width = 360;
-                canvas.height = 600;
-                canvasContainer.style.width = '100%';
-                canvasContainer.style.height = '450px';
-                phoneFrame.style.maxWidth = '600px';
-                btnFull.className = 'py-1.5 px-2 bg-green-600 text-xs rounded-lg border border-green-500 text-white font-medium transition';
-                showToast('Đã phóng to màn hình giả lập');
-            }
-            if (emulatorState !== 'RUNNING') {
-                drawStandbyScreen();
+            logTerminal(`Đã đổi độ phân giải màn hình LCD: ${w}x${h}`, "info");
+        }
+
+        // Drag and Drop Handlers
+        function handleDragOver(e) {
+            e.preventDefault();
+            document.getElementById('dropZone').classList.add('border-emerald-500', 'bg-emerald-950/20');
+        }
+
+        function handleDragLeave(e) {
+            e.preventDefault();
+            document.getElementById('dropZone').classList.remove('border-emerald-500', 'bg-emerald-950/20');
+        }
+
+        function handleDrop(e) {
+            e.preventDefault();
+            document.getElementById('dropZone').classList.remove('border-emerald-500', 'bg-emerald-950/20');
+            if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+                processJarFile(e.dataTransfer.files[0]);
             }
         }
 
-        // Virtual Keypad Button Press Handler
-        function pressKey(key) {
-            logTerminal(`Phím ảo được nhấn: [${key.toUpperCase()}]`, 'info');
-            // Visual pulse feedback on button click
-            if (emulatorState === 'RUNNING') {
-                // Trigger simulated action in game
-                showToast(`Đã gửi tín hiệu phím: ${key}`, 'success');
-            } else {
-                showToast(`Phím ${key} (Máy ảo chưa chạy)`, 'warn');
+        function handleFileSelect(e) {
+            if (e.target.files && e.target.files.length > 0) {
+                processJarFile(e.target.files[0]);
             }
         }
 
-        // Keyboard mapping for PC Keyboard
+        async function processJarFile(file) {
+            logTerminal(`Đang đọc file: ${file.name} (${(file.size / 1024).toFixed(1)} KB)...`, "info");
+            document.getElementById('jarFileName').textContent = file.name;
+            
+            try {
+                const zip = new JSZip();
+                jarArchive = await zip.loadAsync(file);
+                
+                extractedAssets = {};
+                extractedClasses = [];
+                manifestData = {};
+
+                // 1. Read MANIFEST.MF
+                if (jarArchive.files['META-INF/MANIFEST.MF']) {
+                    const manifestText = await jarArchive.files['META-INF/MANIFEST.MF'].async('text');
+                    parseManifest(manifestText);
+                    logTerminal("Đã đọc thành công META-INF/MANIFEST.MF", "success");
+                } else {
+                    logTerminal("Cảnh báo: Không tìm thấy META-INF/MANIFEST.MF trong JAR.", "warn");
+                }
+
+                // 2. Iterate and extract assets & classes
+                let assetCount = 0;
+                let classCount = 0;
+
+                const fileKeys = Object.keys(jarArchive.files);
+                for (const filename of fileKeys) {
+                    const zipEntry = jarArchive.files[filename];
+                    if (zipEntry.dir) continue;
+
+                    if (filename.endsWith('.class')) {
+                        extractedClasses.push(filename);
+                        classCount++;
+                    } else if (/\.(png|jpg|jpeg|gif|bmp)$/i.test(filename)) {
+                        const blob = await zipEntry.async('blob');
+                        extractedAssets[filename] = URL.createObjectURL(blob);
+                        assetCount++;
+                    }
+                }
+
+                // Update UI counts
+                document.getElementById('assetCount').textContent = assetCount;
+                document.getElementById('classCount').textContent = classCount;
+
+                renderAssetInspector();
+                renderClassInspector();
+
+                // Update status badge
+                document.getElementById('statusBadge').className = "flex items-center space-x-2 px-3 py-1.5 rounded-lg bg-emerald-950/50 border border-emerald-500/30 text-xs font-mono text-emerald-300";
+                document.getElementById('statusText').textContent = `Đã nạp thành công (${assetCount} assets)`;
+
+                logTerminal(`Hoàn tất phân tích! Tìm thấy ${classCount} file class và ${assetCount} tài nguyên hình ảnh.`, "success");
+                
+                // Automatically start emulator shell
+                startEmulator();
+
+            } catch (err) {
+                logTerminal(`Lỗi phân tích file JAR: ${err.message}`, "error");
+                console.error(err);
+            }
+        }
+
+        function parseManifest(text) {
+            const lines = text.split(/\r?\n/);
+            let currentKey = '';
+            for (let line of lines) {
+                if (line.startsWith(' ')) {
+                    manifestData[currentKey] += line.trim();
+                } else {
+                    const parts = line.split(':');
+                    if (parts.length >= 2) {
+                        currentKey = parts[0].trim();
+                        manifestData[currentKey] = parts.slice(1).join(':').trim();
+                    }
+                }
+            }
+
+            document.getElementById('mName').textContent = manifestData['MIDlet-Name'] || manifestData['Manifest-Version'] || 'Không rõ';
+            document.getElementById('mVersion').textContent = manifestData['MIDlet-Version'] || '1.0';
+            document.getElementById('mVendor').textContent = manifestData['MIDlet-Vendor'] || 'TeaMobi / Dev';
+            document.getElementById('mMainClass').textContent = manifestData['MIDlet-1'] || manifestData['Main-Class'] || 'N/A';
+            document.getElementById('manifestInfo').classList.remove('hidden');
+        }
+
+        function renderAssetInspector() {
+            const container = document.getElementById('assetsView');
+            container.innerHTML = '';
+            const keys = Object.keys(extractedAssets);
+
+            if (keys.length === 0) {
+                container.innerHTML = '<div class="col-span-3 text-center py-12 text-slate-600 text-xs font-mono">Không tìm thấy file ảnh nào</div>';
+                return;
+            }
+
+            keys.forEach(filename => {
+                const url = extractedAssets[filename];
+                const div = document.createElement('div');
+                div.className = "bg-slate-900 border border-slate-800 rounded-lg p-2 flex flex-col items-center justify-center group relative hover:border-emerald-500/50 transition cursor-pointer";
+                div.innerHTML = `
+                    <div class="h-12 w-12 flex items-center justify-center overflow-hidden mb-1 bg-slate-950 rounded">
+                        <img src="${url}" class="max-h-full max-w-full pixelated object-contain" alt="${filename}">
+                    </div>
+                    <span class="text-[10px] text-slate-400 font-mono truncate w-full text-center" title="${filename}">${filename.split('/').pop()}</span>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        function renderClassInspector() {
+            const container = document.getElementById('classesView');
+            container.innerHTML = '';
+            if (extractedClasses.length === 0) {
+                container.innerHTML = '<div class="text-slate-600 text-center py-12">Không có file .class</div>';
+                return;
+            }
+
+            extractedClasses.slice(0, 100).forEach(cls => {
+                const div = document.createElement('div');
+                div.className = "text-slate-300 hover:text-emerald-400 truncate px-2 py-1 rounded hover:bg-slate-900 transition";
+                div.textContent = cls;
+                container.appendChild(div);
+            });
+            if (extractedClasses.length > 100) {
+                container.innerHTML += `<div class="text-slate-500 text-center py-2">Và ${extractedClasses.length - 100} file class khác...</div>`;
+            }
+        }
+
+        function startEmulator() {
+            if (emulatorConfig.running) return;
+            emulatorConfig.running = true;
+            document.getElementById('canvasOverlay').classList.add('hidden');
+            logTerminal("Khởi động MIDlet Runtime & LCDUI Graphics Engine...", "success");
+            
+            // Start main render loop
+            lastTime = performance.now();
+            frameCount = 0;
+            lastFpsUpdate = lastTime;
+            
+            cancelAnimationFrame(gameAnimFrame);
+            gameLoop();
+        }
+
+        function pauseEmulator() {
+            emulatorConfig.running = false;
+            cancelAnimationFrame(gameAnimFrame);
+            document.getElementById('canvasOverlay').classList.remove('hidden');
+            logTerminal("Tạm dừng giả lập.", "warn");
+        }
+
+        function resetEmulator() {
+            pauseEmulator();
+            playerState.x = emulatorConfig.width / 2;
+            playerState.y = emulatorConfig.height / 2;
+            logTerminal("Đã reset trạng thái MIDlet.", "info");
+            startEmulator();
+        }
+
+        let lastTime = 0;
+        let frameCount = 0;
+        let lastFpsUpdate = 0;
+        let currentFps = 60;
+
+        function gameLoop(timestamp) {
+            if (!emulatorConfig.running) return;
+
+            // Calculate FPS
+            frameCount++;
+            if (timestamp - lastFpsUpdate >= 1000) {
+                currentFps = Math.round((frameCount * 1000) / (timestamp - lastFpsUpdate));
+                document.getElementById('fpsDisplay').textContent = `FPS: ${currentFps}`;
+                frameCount = 0;
+                lastFpsUpdate = timestamp;
+            }
+
+            updateGameLogic();
+            renderCanvasGraphics();
+
+            gameAnimFrame = requestAnimationFrame(gameLoop);
+        }
+
+        function updateGameLogic() {
+            // Keyboard / D-Pad Movement logic
+            let dx = 0;
+            let dy = 0;
+            if (keysState.Left) dx -= 1;
+            if (keysState.Right) dx += 1;
+            if (keysState.Up) dy -= 1;
+            if (keysState.Down) dy += 1;
+
+            if (dx !== 0 && dy !== 0) {
+                dx *= 0.7071;
+                dy *= 0.7071;
+            }
+
+            playerState.x += dx * playerState.speed;
+            playerState.y += dy * playerState.speed;
+
+            // Screen boundaries
+            playerState.x = Math.max(10, Math.min(emulatorConfig.width - 10, playerState.x));
+            playerState.y = Math.max(20, Math.min(emulatorConfig.height - 20, playerState.y));
+        }
+
+        function renderCanvasGraphics() {
+            // Clear screen with retro game background (Dark J2ME LCD style)
+            ctx.fillStyle = '#0f172a';
+            ctx.fillRect(0, 0, emulatorConfig.width, emulatorConfig.height);
+
+            // Draw retro grid pattern
+            ctx.strokeStyle = '#1e293b';
+            ctx.lineWidth = 1;
+            const gridSize = 16;
+            for (let x = 0; x < emulatorConfig.width; x += gridSize) {
+                ctx.beginPath();
+                ctx.moveTo(x, 0);
+                ctx.lineTo(x, emulatorConfig.height);
+                ctx.stroke();
+            }
+            for (let y = 0; y < emulatorConfig.height; y += gridSize) {
+                ctx.beginPath();
+                ctx.moveTo(0, y);
+                ctx.lineTo(emulatorConfig.width, y);
+                ctx.stroke();
+            }
+
+            // Draw J2ME Status Bar at Top
+            ctx.fillStyle = '#1e293b';
+            ctx.fillRect(0, 0, emulatorConfig.width, 18);
+            ctx.fillStyle = '#10b981';
+            ctx.font = '10px JetBrains Mono, monospace';
+            ctx.fillText(manifestData['MIDlet-Name'] ? manifestData['MIDlet-Name'].substring(0, 22) : 'J2ME MIDlet Game', 4, 13);
+            ctx.fillStyle = '#94a3b8';
+            ctx.fillText(`${currentFps}FPS`, emulatorConfig.width - 32, 13);
+
+            // Try to find any loaded game background or sprite image if available
+            const assetKeys = Object.keys(extractedAssets);
+            let renderedAsset = false;
+            if (assetKeys.length > 0) {
+                // Find a nice game background or tile if present in extracted assets
+                const bgKey = assetKeys.find(k => k.includes('bg') || k.includes('map') || k.includes('Big0')) || assetKeys[0];
+                if (bgKey && extractedAssets[bgKey]) {
+                    const img = new Image();
+                    img.src = extractedAssets[bgKey];
+                    if (img.complete && img.naturalWidth > 0) {
+                        ctx.globalAlpha = 0.25;
+                        ctx.drawImage(img, 0, 18, emulatorConfig.width, emulatorConfig.height - 18);
+                        ctx.globalAlpha = 1.0;
+                        renderedAsset = true;
+                    }
+                }
+            }
+
+            // Draw Interactive Character / Sprite Avatar (Simulating active game entity)
+            ctx.fillStyle = '#10b981';
+            ctx.beginPath();
+            ctx.arc(playerState.x, playerState.y, 10, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.strokeStyle = '#ffffff';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+
+            // Character eyes / direction indicator
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(playerState.x - 3, playerState.y - 4, 2, 4);
+            ctx.fillRect(playerState.x + 1, playerState.y - 4, 2, 4);
+
+            // Draw Software Soft-Keys Bar at bottom
+            ctx.fillStyle = '#090d16';
+            ctx.fillRect(0, emulatorConfig.height - 18, emulatorConfig.width, 18);
+            ctx.fillStyle = '#cbd5e1';
+            ctx.font = '9px Inter, sans-serif';
+            ctx.fillText('Menu', 6, emulatorConfig.height - 5);
+            ctx.fillText('Chọn', emulatorConfig.width - 28, emulatorConfig.height - 5);
+        }
+
+        function handleKeyAction(keyName, isPressed) {
+            if (keyName === 'Up') keysState.Up = isPressed;
+            if (keyName === 'Down') keysState.Down = isPressed;
+            if (keyName === 'Left') keysState.Left = isPressed;
+            if (keyName === 'Right') keysState.Right = isPressed;
+            if (keyName === 'Fire') keysState.Fire = isPressed;
+            if (keyName === 'SoftLeft') keysState.SoftLeft = isPressed;
+            if (keyName === 'SoftRight') keysState.SoftRight = isPressed;
+
+            if (isPressed) {
+                logTerminal(`Key pressed: [${keyName}]`, "info");
+            }
+        }
+
+        // Physical Keyboard Binding
         window.addEventListener('keydown', (e) => {
-            if (document.activeElement.tagName === 'INPUT') return;
-
-            switch(e.key) {
-                case 'ArrowUp':
-                    e.preventDefault();
-                    pressKey('up');
-                    break;
-                case 'ArrowDown':
-                    e.preventDefault();
-                    pressKey('down');
-                    break;
-                case 'ArrowLeft':
-                    e.preventDefault();
-                    pressKey('left');
-                    break;
-                case 'ArrowRight':
-                    e.preventDefault();
-                    pressKey('right');
-                    break;
-                case 'Enter':
-                    e.preventDefault();
-                    pressKey('fire');
-                    break;
-                case ' ':
-                    e.preventDefault();
-                    pressKey('fire');
-                    break;
-                case '1': case '2': case '3': case '4': case '5':
-                case '6': case '7': case '8': case '9': case '0':
-                case '*': case '#':
-                    pressKey(e.key);
-                    break;
-            }
+            if (e.key === 'ArrowUp' || e.key === '8') handleKeyAction('Up', true);
+            if (e.key === 'ArrowDown' || e.key === '2') handleKeyAction('Down', true);
+            if (e.key === 'ArrowLeft' || e.key === '4') handleKeyAction('Left', true);
+            if (e.key === 'ArrowRight' || e.key === '6') handleKeyAction('Right', true);
+            if (e.key === 'Enter' || e.key === '5') handleKeyAction('Fire', true);
+            if (e.key === 'F1' || e.key === '*') handleKeyAction('SoftLeft', true);
+            if (e.key === 'F2' || e.key === '#') handleKeyAction('SoftRight', true);
         });
 
-        // Clear terminal logs
-        function clearLogs() {
-            const terminal = document.getElementById('terminal-logs');
-            terminal.innerHTML = '<div>[JVM] Terminal đã được làm sạch.</div>';
-        }
+        window.addEventListener('keyup', (e) => {
+            if (e.key === 'ArrowUp' || e.key === '8') handleKeyAction('Up', false);
+            if (e.key === 'ArrowDown' || e.key === '2') handleKeyAction('Down', false);
+            if (e.key === 'ArrowLeft' || e.key === '4') handleKeyAction('Left', false);
+            if (e.key === 'ArrowRight' || e.key === '6') handleKeyAction('Right', false);
+            if (e.key === 'Enter' || e.key === '5') handleKeyAction('Fire', false);
+            if (e.key === 'F1' || e.key === '*') handleKeyAction('SoftLeft', false);
+            if (e.key === 'F2' || e.key === '#') handleKeyAction('SoftRight', false);
+        });
+
+        // Initialize default screen
+        window.onload = function() {
+            setResolution(240, 320);
+            logTerminal("Trình giả lập J2ME Web đã sẵn sàng. Hãy chọn file .jar của bạn.", "success");
+        };
     </script>
 </body>
 </html>
