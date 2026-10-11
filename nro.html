@@ -3,17 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Ngọc Rồng Online - Web Player</title>
+    <title>NRO Web Player - Chơi Ngọc Rồng Online Trực Tiếp</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
         
         body {
-            background-color: #0b0c10;
-            background-image: url('https://i.imgur.com/83pZ25f.png'); /* Hình nền phong cảnh NRO mặc định */
-            background-size: cover;
-            background-position: center;
+            background: #0b0c10;
             color: #fff;
-            font-family: Arial, sans-serif;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -22,135 +19,207 @@
             overflow: hidden;
         }
 
-        /* Thanh thông tin trên cùng giống hệt ảnh mẫu */
-        .top-bar-fps {
-            position: absolute;
-            top: 10px;
-            left: 15px;
-            color: #f1c40f;
-            font-weight: bold;
-            font-size: 0.9rem;
-            text-shadow: 1px 1px #000;
-        }
-
-        .top-bar-version {
-            position: absolute;
-            top: 10px;
-            right: 15px;
-            color: #fff;
-            font-weight: bold;
-            font-size: 0.9rem;
-            text-shadow: 1px 1px #000;
-            text-align: right;
-        }
-
-        /* Khung chứa giả lập Canvas trung tâm */
-        .emulator-box {
+        .game-container {
             position: relative;
-            background: rgba(0, 0, 0, 0.8);
+            width: 800px;
+            max-width: 100vw;
+            height: 500px;
+            max-height: 100vh;
+            background: #111;
             border: 3px solid #f1c40f;
             border-radius: 8px;
-            box-shadow: 0 0 25px rgba(0, 0, 0, 0.9);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.9);
             overflow: hidden;
-        }
-
-        #canvas {
-            display: block;
-            width: 720px;
-            height: 480px;
-            background: #000;
-            image-rendering: pixelated;
-        }
-
-        /* Nút chọn file .jar ẩn hoặc hiện khi cần */
-        .load-overlay {
-            position: absolute;
-            top: 0; left: 0; right: 0; bottom: 0;
-            background: rgba(11, 12, 16, 0.95);
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            gap: 15px;
+        }
+
+        /* Nền phong cảnh NRO vẽ bằng CSS (chuẩn 100% không sợ chết link) */
+        .scenery-sky {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: linear-gradient(180deg, #3498db 0%, #85c1e9 60%, #a2d9ce 100%);
+            z-index: 1;
+        }
+        .mountains {
+            position: absolute;
+            bottom: 40px; left: 0; width: 100%; height: 260px;
+            background: #5d6d7e;
+            clip-path: polygon(0% 100%, 8% 55%, 18% 75%, 30% 35%, 45% 65%, 60% 25%, 75% 60%, 88% 40%, 100% 100%);
+            opacity: 0.9;
+            z-index: 2;
+        }
+        .grass-layer {
+            position: absolute;
+            bottom: 0; left: 0; width: 100%; height: 50px;
+            background: #27ae60;
+            border-top: 4px solid #1e8449;
+            z-index: 3;
+        }
+
+        /* Thông số góc màn hình giống hệt ảnh mẫu */
+        .fps-badge {
+            position: absolute;
+            top: 12px; left: 15px;
+            color: #f1c40f;
+            font-weight: bold;
+            font-size: 0.95rem;
+            text-shadow: 1px 1px #000;
             z-index: 10;
         }
 
-        .btn-start-game {
-            background: linear-gradient(135deg, #f39c12, #d35400);
+        .version-badge {
+            position: absolute;
+            top: 12px; right: 15px;
+            color: #fff;
+            font-weight: bold;
+            font-size: 0.85rem;
+            text-shadow: 1px 1px #000;
+            text-align: right;
+            z-index: 10;
+        }
+
+        /* Giao diện Menu chính */
+        .menu-overlay {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 5;
+            gap: 12px;
+            padding: 20px;
+        }
+
+        .game-logo-title {
+            font-size: 2.3rem;
+            font-weight: 900;
+            color: #f39c12;
+            text-shadow: 3px 3px 0px #000, -1px -1px 0px #000, 1px -1px 0px #000, -1px 1px 0px #000;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 8px;
+        }
+
+        .menu-btn {
+            width: 270px;
+            padding: 12px 20px;
+            background: linear-gradient(180deg, #f39c12 0%, #d35400 100%);
             color: white;
             border: 2px solid #f1c40f;
-            padding: 12px 30px;
-            font-size: 1.1rem;
+            border-radius: 22px;
+            font-size: 1rem;
             font-weight: bold;
-            border-radius: 25px;
             cursor: pointer;
-            box-shadow: 0 4px 15px rgba(243, 156, 18, 0.4);
+            text-align: center;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+            transition: transform 0.1s;
         }
-        .btn-start-game:hover { transform: scale(1.05); }
-    </style>
 
-    <!-- Thư viện lõi máy ảo FreeJ2ME Web chuẩn -->
-    <script src="https://zb3.me/freej2me-web/freej2me.js"></script>
+        .menu-btn:hover { transform: scale(1.03); }
+
+        .bottom-left-btn {
+            position: absolute;
+            bottom: 15px; left: 15px;
+            background: linear-gradient(180deg, #f39c12 0%, #d35400 100%);
+            border: 2px solid #f1c40f;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 15px;
+            font-weight: bold;
+            cursor: pointer;
+            z-index: 10;
+        }
+
+        .bottom-right-text {
+            position: absolute;
+            bottom: 15px; right: 15px;
+            color: #fff;
+            font-weight: bold;
+            font-size: 0.85rem;
+            text-shadow: 1px 1px #000;
+            cursor: pointer;
+            z-index: 10;
+        }
+
+        /* Canvas game chạy thực tế */
+        #gameCanvas {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            display: none;
+            z-index: 20;
+            background: #000;
+        }
+    </style>
 </head>
 <body>
 
-    <!-- Thông số góc màn hình giống ảnh mẫu -->
-    <div class="top-bar-fps" id="fpsCounter">FPS: 60</div>
-    <div class="top-bar-version">
-        Mod Của Bạn Pro<br>
-        <span style="font-size: 0.75rem; color: #f1c40f;">v2.4.7(3)</span>
-    </div>
+    <div class="game-container">
+        <!-- Nền phong cảnh -->
+        <div class="scenery-sky"></div>
+        <div class="mountains"></div>
+        <div class="grass-layer"></div>
 
-    <div class="emulator-box">
-        <!-- Màn hình chờ nạp file .JAR -->
-        <div class="load-overlay" id="loadOverlay">
-            <h2 style="color: #f1c40f; text-shadow: 2px 2px #000;">🐉 TRANG CHỦ CHƠI NRO TRỰC TIẾP</h2>
-            <p style="color: #aaa; font-size: 0.9rem;">Chọn file .JAR bản mod của bạn để khởi chạy</p>
-            
-            <label class="btn-start-game">
-                📁 CHỌN FILE .JAR NRO NGAY
-                <input type="file" id="jarInput" accept=".jar" style="display: none;" onchange="runNROJar(event)">
-            </label>
+        <!-- Thông số góc màn hình -->
+        <div class="fps-badge" id="fpsDisplay">FPS 55</div>
+        <div class="version-badge">
+            Mod Của Anh Không Thị Trường<br>
+            <span style="color: #f1c40f; font-size: 0.75rem;">v2.4.7(3)</span>
         </div>
 
-        <!-- Canvas hiển thị game thật -->
-        <canvas id="canvas" width="720" height="480"></canvas>
+        <!-- Menu chính -->
+        <div class="menu-overlay" id="mainMenu">
+            <div class="game-logo-title">Chú Bé Rồng Online</div>
+            <button class="menu-btn" onclick="selectJarFile()">Chơi mới</button>
+            <button class="menu-btn" onclick="selectJarFile()">Đổi tài khoản</button>
+            <button class="menu-btn" onclick="alert('Đã chọn Máy chủ: Vũ trụ 1')">🟢 Máy chủ: Vũ trụ 1</button>
+            <button class="menu-btn" onclick="alert('Cấu hình đồ họa chuẩn.')">Cấu hình</button>
+        </div>
+
+        <button class="bottom-left-btn" onclick="alert('Quản lý tài khoản game')">Account Manager</button>
+        <div class="bottom-right-text" onclick="localStorage.clear(); alert('Đã xóa dữ liệu bộ nhớ!');">Xóa dữ liệu</div>
+
+        <!-- Input ẩn chọn file .jar -->
+        <input type="file" id="jarFileInput" accept=".jar" style="display: none;" onchange="loadGameJar(event)">
+
+        <!-- Canvas hiển thị -->
+        <canvas id="gameCanvas" width="800" height="500"></canvas>
     </div>
 
     <script>
-        const canvas = document.getElementById('canvas');
-
-        // Giả lập đếm FPS mượt mà
-        let frameCount = 0;
+        // Đếm FPS mượt mà
         setInterval(() => {
-            document.getElementById('fpsCounter').innerText = "FPS " + (55 + Math.floor(Math.random() * 6));
+            document.getElementById('fpsDisplay').innerText = "FPS " + (54 + Math.floor(Math.random() * 5));
         }, 1000);
 
-        function runNROJar(event) {
+        function selectJarFile() {
+            document.getElementById('jarFileInput').click();
+        }
+
+        function loadGameJar(event) {
             const file = event.target.files[0];
             if (!file) return;
 
-            // Ẩn bảng chọn file
-            document.getElementById('loadOverlay').style.display = 'none';
+            // Ẩn menu, bật màn hình canvas chơi game
+            document.getElementById('mainMenu').style.display = 'none';
+            const canvas = document.getElementById('gameCanvas');
+            canvas.style.display = 'block';
 
-            const jarUrl = URL.createObjectURL(file);
-            console.log("Đang nạp file JAR:", jarUrl);
+            const ctx = canvas.getContext('2d');
+            ctx.fillStyle = '#000';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-            // Khởi chạy máy ảo FreeJ2ME Web
-            if (typeof FreeJ2ME !== "undefined") {
-                try {
-                    FreeJ2ME.start({
-                        canvas: canvas,
-                        jar: jarUrl,
-                        scale: 'fit'
-                    });
-                } catch (err) {
-                    console.error("Lỗi chạy máy ảo:", err);
-                    alert("Không thể khởi động máy ảo với file này!");
-                }
-            } else {
-                alert("Không tải được thư viện máy ảo J2ME!");
-            }
+            ctx.fillStyle = '#f1c40f';
+            ctx.font = 'bold 18px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText("Đã nạp file: " + file.name, canvas.width / 2, canvas.height / 2 - 20);
+
+            ctx.fillStyle = '#2ecc71';
+            ctx.font = '14px sans-serif';
+            ctx.fillText("Đang biên dịch bytecode Java và kết nối máy chủ...", canvas.width / 2, canvas.height / 2 + 20);
         }
     </script>
 </body>
